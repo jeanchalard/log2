@@ -1,0 +1,146 @@
+/* Constants */
+:root {
+  --general-margin : 10px;
+  --min-day-width : 30px;
+  --hover-background : #303030D0;
+}
+
+/* Sanity */
+* {
+  color : white;
+  margin : 0px;
+  box-sizing : border-box;
+  scrollbar-width : thin;
+  font-family : "Noto Sans";
+}
+ul {
+  padding-left : 1em;
+}
+
+/* Magic scrollbar incantations */
+*::-webkit-scrollbar { width : 8px; height : 8px; }
+::-webkit-scrollbar-track { background: #101010; border-radius: 8px; }
+::-webkit-scrollbar-thumb { border-radius: 8px; background: #3F3F3F; border : 0.1px solid #FFFFFF; }
+::-webkit-scrollbar-thumb:hover { background: #4F4F4F; }
+
+@font-face {
+  font-family : "Noto Sans";
+  font-style : normal;
+  font-weight : 100;
+  src : local("Noto Sans CJK JP Medium");
+}
+
+/* Take 1 screen height */
+html {
+  background-color : black;
+  height 100vh;
+}
+body {
+  height : 100%;
+  overflow : hidden;
+  display : flex; flex-direction : column;
+}
+/* Useful classes for dynamism */
+.hidden {
+  display : none;
+}
+.matchParent {
+  position : absolute;
+  top : 0px;
+  bottom : 0px;
+  left : 0px;
+  right : 0px;
+}
+.centered {
+  position : absolute;
+  top : 50%;
+  left : 50%;
+  transform : translate(-50%, -50%);
+}
+
+.errorBox {
+  border : 2px solid #d32847;
+  margin : 5px;
+  padding : 5px;
+  overflow : scroll;
+}
+
+/* Progress bars */
+#loading {
+  text-align : center;
+  width : 80%;
+}
+.progressOut {
+  margin : 10px;
+  border : 1px solid #a0a0a0;
+  height : 30px;
+  width : 100%;
+}
+.progressIn {
+  background-color : #909090;
+  height : 30px;
+}
+
+
+/* Tool bar at the top */
+.toolBar {
+  box-shadow : inset 0px -1px #afafaf;
+  min-height : 5em;
+  background : #101010;
+}
+
+/* Tab bar at the bottom */
+.activeTab {
+  box-shadow : inset 1px 0px #afafaf, inset -1px 0px #afafaf, inset 0px -1px #afafaf;
+  background : #000000;
+  padding-bottom : 6px;
+  padding-top : 6px;
+  padding-left : 10px;
+  padding-right : 10px;
+}
+.inactiveTab {
+  box-shadow : inset 0px 1px 0px 0px #afafaf;
+  background : #303030;
+  color : #afafaf;
+  padding-bottom : 6px;
+  padding-top : 6px;
+  padding-left : 10px;
+  padding-right : 10px;
+}
+.inactiveTab:hover {
+  background : #606060;
+  cursor : pointer;
+}
+.tabBar {
+  position : absolute;
+  box-shadow : inset 0px 1px 0px 0px #afafaf;
+  background : #303030;
+  bottom : 0px;
+  width : 100%;
+  display : flex;
+  padding-left : 10px;
+  padding-right : 10px;
+}
+
+/* Content */
+#content {
+  display : flex;
+  flex-direction : row-reverse;
+}
+#activityList {
+  overflow : scroll;
+  min-width : 30%;
+  max-width : 40%;
+  background-color : #303030;
+  padding : 5px;
+  padding-left : 10px;
+  padding-right : 10px;
+  border-left : solid 2px #afafaf;
+}
+
+.timeRender {
+  background-color : #202020;
+  font-size : smaller;
+  padding : 0.2em;
+  margin-left : 0.3em;
+}

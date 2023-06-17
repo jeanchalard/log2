@@ -1,0 +1,27 @@
+<html><head><meta charset="UTF-8">
+    <link rel="stylesheet" href="calendar.css">
+</head><body>
+<div id="banner" class="matchParent">
+    <div id="loading" class="centered">
+        Loading...
+        <div id="progressRules" class="progressOut"><div class="progressIn" style="width : 0px;"></div></div>
+        <div id="progressData" class="progressOut"><div class="progressIn" style="width : 0px;"></div></div>
+    </div>
+</div>
+<div id="main" class="hidden matchParent">
+    <div id="toolBar" class="toolBar">
+    </div>
+
+    <div id="content">
+        <div id="activityList"></div>
+        <canvas id="surface"></canvas>
+    </div>
+
+    <div id="tabBar" class="tabBar">
+        <div class="activeTab">Time use</div>
+        <div class="inactiveTab">Calendar</div>
+    </div>
+</div>
+<script src="data.js"></script>
+<script src="js.js"></script>
+</body></html>
