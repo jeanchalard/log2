@@ -22,26 +22,46 @@ const val fragmentShader = """
   
   const float TAU = 6.28318;
   const float RADIUS = 0.45;
-  const float LINE_THICKNESS = 0.005;
+  const float LINE_THICKNESS = 0.004;
   uniform vec2 resolution;
-
-  vec3 colorForPercentile(float percentile) {
-    for (int i = 0; i < ${MAX_SUBCATS}; i++) {
-      if (percentiles[i] > percentile) return colors[i];
-    }
-    return vec3(1., 0., 0.);
-  }
-
-  vec3 colorForCoord(vec2 uv) {
-    float angle = atan(uv.y, uv.x) / TAU;
-    angle = mod(angle, 1.);
-    return colorForPercentile(angle);
-  }
 
   //  Function from Iñigo Quiles
   //  www.iquilezles.org/www/articles/functions/functions.htm
   float parabola(float x, float k) {
     return pow(4.0 * x * (1.0 - x), k);
+  }
+
+  vec3 colorForPercentile(float percentile) {
+    for (int i = 0; i < ${MAX_SUBCATS}; i++) {
+      if (percentiles[i] > percentile) return colors[i];
+    }
+    return vec3(0.);
+  }
+
+  vec2 boundsForPercentile(float percentile) {
+    for (int i = 0; i < ${MAX_SUBCATS}; i++) {
+      if (percentiles[i] > percentile) return vec2(i == 0 ? 0. : percentiles[i - 1], percentiles[i]);
+    }
+    return vec2(0., 0.0001); // At least it won't crash
+  }
+
+  vec2 polarToCartesian(float r, float a) {
+    return r * vec2(cos(TAU * a), sin(TAU * a));
+  }
+
+  vec3 colorForCoord(vec2 uv) {
+    float r = length(uv);
+    float angle = atan(uv.y, uv.x) / TAU;
+    angle = mod(angle, 1.);
+    vec3 color = colorForPercentile(angle);
+    vec2 percentileRange = boundsForPercentile(angle);
+
+    vec2 startPoint = polarToCartesian(r, percentileRange.x);
+    vec2 endPoint = polarToCartesian(r, percentileRange.y);
+    float distFromClosestBorder = min(distance(startPoint, uv), distance(endPoint, uv));
+
+    float prop = max(parabola(0.5 + distFromClosestBorder / LINE_THICKNESS, 1.), 0.);
+    return mix(color, vec3(1.), prop);
   }
 
   void main() {
