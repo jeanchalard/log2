@@ -22,7 +22,7 @@ const val fragmentShader = """
   
   const float TAU = 6.28318;
   const float RADIUS = 0.45;
-  const float LINE_THICKNESS = 0.004;
+  float LINE_THICKNESS;
   uniform vec2 resolution;
 
   //  Function from Iñigo Quiles
@@ -66,6 +66,7 @@ const val fragmentShader = """
 
   void main() {
     float zoom = 1. / min(resolution.x, resolution.y);
+    LINE_THICKNESS = 2. * zoom;
     vec2 uv = (gl_FragCoord.xy - resolution * 0.5) * zoom;
     float r = length(uv);
     float distFromEdge = RADIUS - r;
