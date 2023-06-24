@@ -124,6 +124,7 @@ body {
 
 /* Content */
 #content {
+  position : relative;
   display : flex;
   flex-direction : row-reverse;
 }
@@ -136,6 +137,11 @@ body {
   padding-left : 10px;
   padding-right : 10px;
   border-left : solid 2px #afafaf;
+}
+canvas {
+  position : absolute;
+  top : 0px;
+  left : 0px;
 }
 
 .timeRender {

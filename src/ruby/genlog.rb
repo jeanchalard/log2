@@ -53,7 +53,8 @@ OUTDIR = arg('-o', true) || 'default'
 FileUtils.mkdir_p(OUTDIR)
 RULES = arg("-r", true) || "rules/default.grc"
 SRCDIR = arg('-s', true) || '.'
-DATA = Dir["#{SRCDIR}/data*/*"]
+#DATA = Dir["#{SRCDIR}/data*/*"]
+DATA = Dir["#{SRCDIR}/data/2023_06*"]
 
 def readRules(rules)
   s = ""

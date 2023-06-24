@@ -10,6 +10,7 @@ import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.asList
+import org.w3c.dom.events.MouseEvent
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
@@ -24,10 +25,7 @@ class UncategorizedActivities(errors : List<UncategorizedActivity>) : Exception(
   val errors = errors.map { it.toString() }
 }
 
-fun el(s : String) = document.getElementById(s) ?: throw HTMLElementNotFound("Can't find element with id ${s}")
-fun elOrNull(s : String) = document.getElementById(s)
 val surface get() = el("surface") as HTMLCanvasElement
-val Element.first get() = firstElementChild as HTMLElement
 
 suspend fun parseData(rules : Rules, data : String, progressReporter : (Int) -> Unit) : DataSet {
   val dataSet = DataSet(rules)
@@ -50,21 +48,22 @@ suspend fun parseData(rules : Rules, data : String, progressReporter : (Int) -> 
 }
 
 suspend fun resizeCanvas() : Pair<Int, Int> {
-  val c = el("content")
-  val s = surface
-  val siblings = c.parentElement!!.children.asList()
-  val remainingHeight = siblings.fold(c.parentElement!!.clientHeight) {
+  val parent = el("content")
+  val activityList = el("activityList")
+  val siblings = parent.parentElement!!.children.asList()
+  val remainingHeight = siblings.fold(parent.parentElement!!.clientHeight) {
       acc, e -> if (e.id == "content") acc else acc - e.clientHeight
   }
-  el("activityList").apply {
-    setAttribute("style", "height:${remainingHeight}px;")
-  }
+  activityList.style = "height:${remainingHeight}px;"
   yield()
-  val remainingWidth = c.children.asList().fold(c.parentElement!!.clientWidth) {
-      acc, e -> if (e.id == "surface") acc else acc - e.clientWidth
-  }
-  s.setAttribute("width", "${remainingWidth}px")
-  s.setAttribute("height", "${remainingHeight}px")
+  val remainingWidth = parent.clientWidth - activityList.clientWidth
+  surface.setAttribute("width", "${remainingWidth}px")
+  surface.setAttribute("height", "${remainingHeight}px")
+  val sizeStyle = "width : ${remainingWidth}px; height : ${remainingHeight}px;"
+  (surface as Element).style = sizeStyle
+  el("camembert").style = sizeStyle
+  el("overlay").style = sizeStyle
+
   return remainingWidth to remainingHeight
 }
 
@@ -81,6 +80,8 @@ fun CoroutineScope.launchHandlingError(context: CoroutineContext = EmptyCoroutin
                                        block : suspend CoroutineScope.() -> Unit) = launch(context, start) {
   handleError { block() }
 }
+
+fun Element.addMouseMoveListener(handler : (MouseEvent) -> Unit) = addEventListener("mousemove", { handler(it as MouseEvent) })
 
 fun main() {
   window.onload = {
@@ -105,6 +106,9 @@ fun main() {
           renderer.sizeViewPort(w, h)
           renderer.render(dataSet.top, rules.colors)
         }
+      }
+      el("overlay").addMouseMoveListener{
+        console.log(it)
       }
     }
   }
