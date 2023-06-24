@@ -33,3 +33,11 @@ operator fun Int.not() = when {
   else -> toString()
 }
 fun Minute.renderDuration() : String = "${!(this / 60)}:${!(this % 60)}"
+
+operator fun Float.not() = toString().let {
+  val dotIndex = it.indexOf('.')
+  when {
+    dotIndex <= it.length + 4 -> it
+    else -> it.substring(0..(dotIndex + 3))
+  }
+}
