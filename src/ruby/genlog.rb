@@ -17,7 +17,6 @@ def arg(arg, takesArg)
   end
 end
 
-
 def parsePeriod(period, defaultYear)
   def parseAdhocDate(date, defaultYear)
     adhocDate = Struct.new(:date, :yearWasExplicit)
@@ -46,15 +45,6 @@ def parsePeriod(period, defaultYear)
   $stderr.puts "Selected period : #{from.date} ~ #{to.date}"
   return [from.date, to.date]
 end
-
-DEBUG = arg("-d", false)
-PERIOD = parsePeriod(arg("-p", true) || '2000-01-01~2200-12-31', Time.now.year)
-OUTDIR = arg('-o', true) || 'default'
-FileUtils.mkdir_p(OUTDIR)
-RULES = arg("-r", true) || "rules/default.grc"
-SRCDIR = arg('-s', true) || '.'
-#DATA = Dir["#{SRCDIR}/data*/*"]
-DATA = Dir["#{SRCDIR}/data/2023_06*"]
 
 def readRules(rules)
   s = ""
@@ -166,6 +156,15 @@ def collapseIdentical(data)
   end
   result << prevl
 end
+
+DEBUG = arg("-d", false)
+PERIOD = parsePeriod(arg("-p", true) || '2000-01-01~2200-12-31', Time.now.year)
+OUTDIR = arg('-o', true) || 'default'
+FileUtils.mkdir_p(OUTDIR)
+RULES = arg("-r", true) || "rules/default.grc"
+SRCDIR = arg('-s', true) || '.'
+#DATA = Dir["#{SRCDIR}/data*/*"]
+DATA = Dir["#{SRCDIR}/data/2023_0*"]
 
 rules = readRules(RULES).gsub("\\", "\\\\\\").gsub("\"", "\\\"").gsub("\n", "\\n")
 data = readData(DATA).gsub("\\", "\\\\\\").gsub("\"", "\\\"").gsub("\n", "\\n")

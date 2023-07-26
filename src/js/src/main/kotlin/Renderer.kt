@@ -4,6 +4,7 @@ import org.w3c.dom.HTMLCanvasElement
 import kotlin.math.PI
 import org.khronos.webgl.WebGLRenderingContext as GL
 
+const val RADIUS = 0.45f
 const val MAX_SUBCATS = 100
 const val TAU = (PI * 2).toFloat()
 const val vertexShader = """
@@ -21,7 +22,7 @@ const val fragmentShader = """
   uniform float percentiles[${MAX_SUBCATS}];
   
   const float TAU = 6.28318;
-  const float RADIUS = 0.45;
+  const float RADIUS = ${RADIUS};
   float LINE_THICKNESS;
   uniform vec2 resolution;
 

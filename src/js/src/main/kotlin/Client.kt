@@ -1,4 +1,3 @@
-import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.*
 import kotlinx.dom.addClass
@@ -8,15 +7,17 @@ import kotlinx.html.div
 import kotlinx.html.dom.append
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
-import org.w3c.dom.HTMLElement
 import org.w3c.dom.asList
-import org.w3c.dom.events.MouseEvent
+import org.w3c.dom.events.UIEvent
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.math.atan
+import kotlin.math.min
 
 external val rules : String
 external val data : String
 val mainScope = MainScope()
+lateinit var currentGroup : Group
 
 class HTMLElementNotFound(msg : String) : Exception(msg)
 
@@ -75,13 +76,18 @@ suspend fun <T> handleError(block : suspend () -> T) = try {
   error(e)
   throw e
 }
-fun CoroutineScope.launchHandlingError(context: CoroutineContext = EmptyCoroutineContext,
+private fun CoroutineScope.launchHandlingError(context: CoroutineContext = EmptyCoroutineContext,
                                        start: CoroutineStart = CoroutineStart.DEFAULT,
                                        block : suspend CoroutineScope.() -> Unit) = launch(context, start) {
   handleError { block() }
 }
 
-fun Element.addMouseMoveListener(handler : (MouseEvent) -> Unit) = addEventListener("mousemove", { handler(it as MouseEvent) })
+private var hoveredGroup : Group? = null
+private fun selectHoveredGroup(g : Group?) {
+  if (hoveredGroup == g) return
+  hoveredGroup = g
+  console.log("HoveredGroup ${g?.canon?.name}")
+}
 
 fun main() {
   window.onload = {
@@ -91,24 +97,48 @@ fun main() {
       val rules = parseRules(rules) { progressRules.style.width = "${it}%" }
       val dataSet = parseData(rules, data) { progressData.style.width = "${it}%"}
       dataSet.prune()
+      currentGroup = dataSet.top
       removeLoading()
       el("main").removeClass("hidden")
       yield()
-      resizeCanvas()
       val renderer = Renderer(surface)
       yield()
       val tree = GroupTree(dataSet.top)
       tree.render(el("activityList"))
-      renderer.render(dataSet.top, rules.colors)
       window.onresize = {
         mainScope.launchHandlingError {
           val (w, h) = resizeCanvas()
           renderer.sizeViewPort(w, h)
-          renderer.render(dataSet.top, rules.colors)
+          renderer.render(currentGroup, rules.colors)
         }
       }
-      el("overlay").addMouseMoveListener{
-        console.log(it)
+      // To render the graph after the first layout pass, once the size is known
+      window.requestAnimationFrame { window.setTimeout({ window.onresize?.invoke(UIEvent("resize")) }) }
+      val overlay = el("overlay")
+      overlay.addMouseMoveListener {
+        val s = min(overlay.clientWidth, overlay.clientHeight)
+        val x = (it.offsetX.toFloat() - overlay.clientWidth / 2) / s
+        val y = (it.offsetY.toFloat() - overlay.clientHeight / 2) / s
+        val lengthSquared = x * x + y * y
+        if (lengthSquared > RADIUS * RADIUS) {
+          selectHoveredGroup(null)
+          return@addMouseMoveListener
+        }
+        val group = currentGroup
+        var angle = when {
+          y <= 0 && x >= 0 -> atan(-y / x) / TAU
+          y <= 0 && x <= 0 -> 0.5f - atan(y / x) / TAU
+          y >= 0 && x <= 0 -> atan(-y / x) / TAU + 0.5f
+          else -> 1f - atan(y / x) / TAU
+        }
+        var minute = angle * group.totalMinutes
+        group.children.forEach {
+          minute -= it.totalMinutes
+          if (minute <= 0) {
+            selectHoveredGroup(it)
+            return@addMouseMoveListener
+          }
+        }
       }
     }
   }
