@@ -48,6 +48,7 @@ suspend fun parseData(rules : Rules, data : String, progressReporter : (Int) -> 
   return dataSet
 }
 
+
 suspend fun resizeCanvas() : Pair<Int, Int> {
   val parent = el("content")
   val activityList = el("activityList")
@@ -55,15 +56,15 @@ suspend fun resizeCanvas() : Pair<Int, Int> {
   val remainingHeight = siblings.fold(parent.parentElement!!.clientHeight) {
       acc, e -> if (e.id == "content") acc else acc - e.clientHeight
   }
-  activityList.style = "height:${remainingHeight}px;"
+  activityList.styleString = "height:${remainingHeight}px;"
   yield()
   val remainingWidth = parent.clientWidth - activityList.clientWidth
   surface.setAttribute("width", "${remainingWidth}px")
   surface.setAttribute("height", "${remainingHeight}px")
   val sizeStyle = "width : ${remainingWidth}px; height : ${remainingHeight}px;"
-  (surface as Element).style = sizeStyle
-  el("camembert").style = sizeStyle
-  el("overlay").style = sizeStyle
+  (surface as Element).styleString = sizeStyle
+  el("camembert").styleString = sizeStyle
+  el("overlay").styleString = sizeStyle
 
   return remainingWidth to remainingHeight
 }

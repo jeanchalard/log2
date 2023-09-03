@@ -164,7 +164,7 @@ FileUtils.mkdir_p(OUTDIR)
 RULES = arg("-r", true) || "rules/default.grc"
 SRCDIR = arg('-s', true) || '.'
 #DATA = Dir["#{SRCDIR}/data*/*"]
-DATA = Dir["#{SRCDIR}/data/2023_0*"]
+DATA = Dir["#{SRCDIR}/data/2023_08*"]
 
 rules = readRules(RULES).gsub("\\", "\\\\\\").gsub("\"", "\\\"").gsub("\n", "\\n")
 data = readData(DATA).gsub("\\", "\\\\\\").gsub("\"", "\\\"").gsub("\n", "\\n")

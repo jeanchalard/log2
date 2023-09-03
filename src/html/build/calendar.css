@@ -150,3 +150,25 @@ canvas {
   padding : 0.2em;
   margin-left : 0.3em;
 }
+.timeRender-single {
+  background-color : #202020;
+  font-size : smaller;
+  padding : 0.2em;
+}
+
+/* list bullets */
+ul.branch {
+  list-style : none;
+}
+li.leaf:before {
+  padding-right : 0.5em;
+  content : "\2BC0";
+}
+li.open:before {
+  padding-right : 0.5em;
+  content : "\2BC6";
+}
+li.closed:before {
+  padding-right : 0.5em;
+  content : "\2BC8";
+}

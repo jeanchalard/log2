@@ -1,7 +1,7 @@
 val out = "${rootDir}/../out"
 
 plugins {
-    kotlin("js") version "1.8.0"
+    kotlin("js") version "1.9.0"
 }
 
 group = "j"
@@ -33,6 +33,6 @@ kotlin {
 
 tasks.register<Copy>("make") {
     dependsOn(":js:assemble")
-    from("${buildDir}/distributions")
+    from("${buildDir}/dist/js/productionExecutable")
     into(out)
 }
