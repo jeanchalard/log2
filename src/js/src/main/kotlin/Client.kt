@@ -90,6 +90,16 @@ private fun selectHoveredGroup(g : Group?) {
   console.log("HoveredGroup ${g?.canon?.name}")
 }
 
+private fun startAnimation(renderer : Renderer, colors : Map<String, Array<Float>>) {
+  @Suppress("UNUSED_PARAMETER") // It's a callback you idiot
+  fun step(timestamp : Double) {
+    if (!renderer.render(currentGroup, colors)) {
+      window.requestAnimationFrame { step(it) }
+    }
+  }
+  step(0.0)
+}
+
 fun main() {
   window.onload = {
     val progressRules = el("progressRules").first
@@ -110,7 +120,7 @@ fun main() {
         mainScope.launchHandlingError {
           val (w, h) = resizeCanvas()
           renderer.sizeViewPort(w, h)
-          renderer.render(currentGroup, rules.colors)
+          startAnimation(renderer, rules.colors)
         }
       }
       // To render the graph after the first layout pass, once the size is known

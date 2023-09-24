@@ -2,6 +2,7 @@ import org.khronos.webgl.Float32Array
 import org.khronos.webgl.WebGLProgram
 import org.w3c.dom.HTMLCanvasElement
 import kotlin.math.PI
+import kotlin.math.abs
 import org.khronos.webgl.WebGLRenderingContext as GL
 
 const val RADIUS = 0.45f
@@ -87,6 +88,15 @@ class Renderer(surface : HTMLCanvasElement) {
   private val gl = surface.getContext("webgl") as GL
   private val shader : WebGLProgram
 
+  // Identify if the group has changed (different set) or not (e.g. window resize) to see if animation should start
+  private var lastGroup = Group(Category("none", emptyList()))
+  // The current animation values, to avoid allocating every time
+  private val currentColors = Array(MAX_SUBCATS * 3) { 0f }
+  private val currentPercentiles = Array(MAX_SUBCATS) { 0f }
+  // The animation end values
+  private val endColors = Array(MAX_SUBCATS * 3) { 0f }
+  private val endPercentiles = Array(MAX_SUBCATS) { 0f }
+
   init {
     setupSurface()
     shader = setupShaders()
@@ -94,22 +104,46 @@ class Renderer(surface : HTMLCanvasElement) {
     sizeViewPort(surface.clientWidth, surface.clientHeight)
   }
 
-  private inline fun <reified T> List<T>.fill(size : Int, default : T) = Array(size) { i -> if (i >= this.size) default else this[i] }
-  private inline fun <reified T> Array<T>.fill(size : Int, default : T) = Array(size) { i -> if (i >= this.size) default else this[i] }
+  private inline fun <reified T> Array<T>.fill(src : List<T>, default : T) = indices.forEach { i -> this[i] = if (i >= src.size) default else src[i] }
 
-  fun render(group : Group, colors : Map<String, Array<Float>>) {
-    val percentiles = mutableListOf(0f)
-    val colorVals = mutableListOf(0f)
-    group.children.forEach { child ->
-      percentiles.add(percentiles.last() + child.totalMinutes.toFloat() / group.totalMinutes)
-      val c = colors[child.canon.name] ?: arrayOf(1f, 1f, 1f)
-      c.forEach { colorVals.add(it) }
+  private fun interpolate(out : Array<Float>, end : Array<Float>) : Boolean {
+    var finish = true
+    (0..out.size).forEach { i ->
+      val diff = end[i] - out[i]
+      out[i] += 0.1f * diff
+      if (abs(diff) > 0.001) finish = false
     }
-    percentiles.drop(1)
+    return finish
+  }
 
-    gl.uniform3fv(shader["colors"], colorVals.fill(MAX_SUBCATS * 3, 1f))
-    gl.uniform1fv(shader["percentiles"], percentiles.fill(MAX_SUBCATS, 10f))
+  // To avoid re-allocating for each render
+  private val percentiles = mutableListOf<Float>()
+  private val colorVals = mutableListOf<Float>()
+  fun render(group : Group, colors : Map<String, Array<Float>>) : Boolean {
+    if (group !== lastGroup) {
+      console.log("RENDER")
+      lastGroup = group
+      percentiles.clear()
+      colorVals.clear()
+      percentiles.add(0f)
+      colorVals.add(0f)
+      group.children.forEach { child ->
+        percentiles.add(percentiles.last() + child.totalMinutes.toFloat() / group.totalMinutes)
+        val c = colors[child.canon.name] ?: arrayOf(1f, 1f, 1f)
+        c.forEach { colorVals.add(it) }
+      }
+      percentiles.drop(1)
+      endColors.fill(colorVals, 0f)
+      endPercentiles.fill(percentiles, 10f)
+    }
+
+    var finished = true
+    finished = finished and interpolate(currentColors, endColors)
+    finished = finished and interpolate(currentPercentiles, endPercentiles)
+    gl.uniform3fv(shader["colors"], currentColors)
+    gl.uniform1fv(shader["percentiles"], currentPercentiles)
     gl.drawArrays(GL.TRIANGLE_STRIP, first = 0, count = 4)
+    return finished
   }
 
   private fun setupSurface() {
