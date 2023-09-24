@@ -11,13 +11,11 @@ import org.w3c.dom.asList
 import org.w3c.dom.events.UIEvent
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.math.atan
-import kotlin.math.min
 
 external val rules : String
 external val data : String
 val mainScope = MainScope()
-lateinit var currentGroup : Group
+lateinit var log2 : Log2
 
 class HTMLElementNotFound(msg : String) : Exception(msg)
 
@@ -34,9 +32,9 @@ suspend fun parseData(rules : Rules, data : String, progressReporter : (Int) -> 
   val lines = data.lines()
   val total = lines.size
   var currentLine = 0
-  lines.forEach {
+  lines.forEach { line ->
     currentLine += 1
-    val l = it.trim().replace(' ', ' ')
+    val l = line.trim().replace(' ', ' ')
     if (l.isEmpty()) return@forEach
     val activity = Activity.parse(l)
     dataSet.categorize(activity)?.let { uncategorizedActivities.add(it) }
@@ -47,7 +45,6 @@ suspend fun parseData(rules : Rules, data : String, progressReporter : (Int) -> 
   if (uncategorizedActivities.isNotEmpty()) throw UncategorizedActivities(uncategorizedActivities)
   return dataSet
 }
-
 
 suspend fun resizeCanvas() : Pair<Int, Int> {
   val parent = el("content")
@@ -75,29 +72,12 @@ suspend fun <T> handleError(block : suspend () -> T) = try {
   error(e)
 } catch (e : dynamic) { // Catch JS exceptions generated outside of kotlin code
   error(e)
-  throw e
+  throw e as Throwable
 }
-private fun CoroutineScope.launchHandlingError(context: CoroutineContext = EmptyCoroutineContext,
+fun CoroutineScope.launchHandlingError(context: CoroutineContext = EmptyCoroutineContext,
                                        start: CoroutineStart = CoroutineStart.DEFAULT,
                                        block : suspend CoroutineScope.() -> Unit) = launch(context, start) {
   handleError { block() }
-}
-
-private var hoveredGroup : Group? = null
-private fun selectHoveredGroup(g : Group?) {
-  if (hoveredGroup == g) return
-  hoveredGroup = g
-  console.log("HoveredGroup ${g?.canon?.name}")
-}
-
-private fun startAnimation(renderer : Renderer, colors : Map<String, Array<Float>>) {
-  @Suppress("UNUSED_PARAMETER") // It's a callback you idiot
-  fun step(timestamp : Double) {
-    if (!renderer.render(currentGroup, colors)) {
-      window.requestAnimationFrame { step(it) }
-    }
-  }
-  step(0.0)
 }
 
 fun main() {
@@ -108,49 +88,11 @@ fun main() {
       val rules = parseRules(rules) { progressRules.style.width = "${it}%" }
       val dataSet = parseData(rules, data) { progressData.style.width = "${it}%"}
       dataSet.prune()
-      currentGroup = dataSet.top
-      removeLoading()
-      el("main").removeClass("hidden")
-      yield()
-      val renderer = Renderer(surface)
-      yield()
-      val tree = GroupTree(dataSet.top)
-      tree.render(el("activityList"))
-      window.onresize = {
-        mainScope.launchHandlingError {
-          val (w, h) = resizeCanvas()
-          renderer.sizeViewPort(w, h)
-          startAnimation(renderer, rules.colors)
-        }
-      }
+      log2 = Log2(surface, rules, dataSet)
       // To render the graph after the first layout pass, once the size is known
       window.requestAnimationFrame { window.setTimeout({ window.onresize?.invoke(UIEvent("resize")) }) }
-      val overlay = el("overlay")
-      overlay.addMouseMoveListener {
-        val s = min(overlay.clientWidth, overlay.clientHeight)
-        val x = (it.offsetX.toFloat() - overlay.clientWidth / 2) / s
-        val y = (it.offsetY.toFloat() - overlay.clientHeight / 2) / s
-        val lengthSquared = x * x + y * y
-        if (lengthSquared > RADIUS * RADIUS) {
-          selectHoveredGroup(null)
-          return@addMouseMoveListener
-        }
-        val group = currentGroup
-        var angle = when {
-          y <= 0 && x >= 0 -> atan(-y / x) / TAU
-          y <= 0 && x <= 0 -> 0.5f - atan(y / x) / TAU
-          y >= 0 && x <= 0 -> atan(-y / x) / TAU + 0.5f
-          else -> 1f - atan(y / x) / TAU
-        }
-        var minute = angle * group.totalMinutes
-        group.children.forEach {
-          minute -= it.totalMinutes
-          if (minute <= 0) {
-            selectHoveredGroup(it)
-            return@addMouseMoveListener
-          }
-        }
-      }
+      removeLoading()
+      el("main").removeClass("hidden")
     }
   }
 }
