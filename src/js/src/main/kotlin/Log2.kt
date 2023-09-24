@@ -33,6 +33,13 @@ class Log2 internal constructor(private val surface : HTMLCanvasElement, private
                                private val tree : GroupTree) {
   private val currentGroup = dataSet.top
 
+  private var hoveredGroup : Group? = null
+    set(g) {
+      if (field == g) return
+      field = g
+      console.log("HoveredGroup ${g?.canon?.name}")
+    }
+
   fun startAnimation() {
     @Suppress("UNUSED_PARAMETER") // It's a callback dude
     fun step(timestamp : Double) {
@@ -43,13 +50,6 @@ class Log2 internal constructor(private val surface : HTMLCanvasElement, private
     step(0.0)
   }
 
-  private var hoveredGroup : Group? = null
-  private fun selectHoveredGroup(g : Group?) {
-    if (hoveredGroup == g) return
-    hoveredGroup = g
-    console.log("HoveredGroup ${g?.canon?.name}")
-  }
-
   internal fun registerMouseListeners() {
     val overlay = el("overlay")
     overlay.addMouseMoveListener {
@@ -58,7 +58,7 @@ class Log2 internal constructor(private val surface : HTMLCanvasElement, private
       val y = (it.offsetY.toFloat() - overlay.clientHeight / 2) / s
       val lengthSquared = x * x + y * y
       if (lengthSquared > RADIUS * RADIUS) {
-        selectHoveredGroup(null)
+        hoveredGroup = null
         return@addMouseMoveListener
       }
       val group = currentGroup
@@ -72,7 +72,7 @@ class Log2 internal constructor(private val surface : HTMLCanvasElement, private
       group.children.forEach {
         minute -= it.totalMinutes
         if (minute <= 0) {
-          selectHoveredGroup(it)
+          hoveredGroup = it
           return@addMouseMoveListener
         }
       }
