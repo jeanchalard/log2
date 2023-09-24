@@ -157,20 +157,25 @@ def collapseIdentical(data)
   result << prevl
 end
 
+def file(s)
+  if File.file?(s)
+    return s
+  elsif File.directory?(s)
+    return Dir["#{s}/*"].map {|x| file(x) }
+  else
+    return []
+  end
+end
+
 DEBUG = arg("-d", false)
 PERIOD = parsePeriod(arg("-p", true) || '2000-01-01~2200-12-31', Time.now.year)
 OUTDIR = arg('-o', true) || 'default'
 FileUtils.mkdir_p(OUTDIR)
 RULES = arg("-r", true) || "rules/default.grc"
-SRCDIR = arg('-s', true) || '.'
-#DATA = Dir["#{SRCDIR}/data*/*"]
-DATA = Dir["#{SRCDIR}/data/2023_08*"]
+SRC = arg('-s', true) || 'data*'
+DATA = Dir[SRC].map {|x| file(x) }.flatten
 
 rules = readRules(RULES).gsub("\\", "\\\\\\").gsub("\"", "\\\"").gsub("\n", "\\n")
 data = readData(DATA).gsub("\\", "\\\\\\").gsub("\"", "\\\"").gsub("\n", "\\n")
 
 File.write("#{OUTDIR}/data.js", "data = \"#{data}\"\nrules = \"#{rules}\"")
-
-# data.split("\\n").each do |l|
-#   puts l
-# end

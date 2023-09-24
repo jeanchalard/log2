@@ -1,7 +1,10 @@
+val rules = "calendar"
+val data = "data/2023_*"
+
 val out = "${rootDir}/../out"
 
 tasks.register<Exec>("gen") {
-  commandLine("./genlog.rb", "-o", buildDir, "-s", "${rootDir}/..", "-r", "${rootDir}/../rules/calendar.grc")
+  commandLine("./genlog.rb", "-o", buildDir, "-r", "${rootDir}/../rules/${rules}.grc", "-s", "${rootDir}/../${data}")
   inputs.files(fileTree("${rootDir}/..") { include("data*/*") }, fileTree("${rootDir}/../rules") { include("*") }, "genlog.rb")
   outputs.files("${buildDir}/data.js")
 }
