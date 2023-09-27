@@ -1,6 +1,7 @@
 import kotlinx.browser.document
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
 
 /**
@@ -37,3 +38,4 @@ val Element.style : Style
 
 fun Element.addMouseMoveListener(handler : (MouseEvent) -> Unit) = addEventListener("mousemove", { handler(it as MouseEvent) })
 fun Element.addMouseClickListener(handler : (MouseEvent) -> Unit) = addEventListener("click", { handler(it as MouseEvent) })
+fun Element.addOnInputListener(handler : (Event) -> Unit) = addEventListener("input", { handler(it) })

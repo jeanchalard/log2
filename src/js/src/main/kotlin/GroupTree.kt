@@ -15,7 +15,10 @@ class GroupTree(private val top : Group) {
     private val uniqueId = atomic(1)
     private fun nextId() = "tree${uniqueId.getAndIncrement()}"
   }
-  fun render(anchor : Element) = anchor.append { render(top, null, id = nextId(), depth = 0) }
+  fun render(anchor : Element) {
+    anchor.innerHTML = ""
+    anchor.append { render(top, null, id = nextId(), depth = 0) }
+  }
 
   private fun Group.parentWeight(parent : Group?) =
     parents.find { it.group == parent }?.weight ?: 1.0f
@@ -72,7 +75,5 @@ class GroupTree(private val top : Group) {
         (children as Element).style["display"] = "none"
       }
     }
-
-
   }
 }

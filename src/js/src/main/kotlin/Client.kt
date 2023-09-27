@@ -7,6 +7,7 @@ import kotlinx.html.div
 import kotlinx.html.dom.append
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
+import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.asList
 import org.w3c.dom.events.UIEvent
 import kotlin.coroutines.CoroutineContext
@@ -25,25 +26,24 @@ class UncategorizedActivities(errors : List<UncategorizedActivity>) : Exception(
 }
 
 val surface get() = el("surface") as HTMLCanvasElement
+val startDateInput get() = el("startDate") as HTMLInputElement
+val endDateInput get() = el("endDate") as HTMLInputElement
 
-suspend fun parseData(rules : Rules, data : String, progressReporter : (Int) -> Unit) : DataSet {
-  val dataSet = DataSet(rules)
-  val uncategorizedActivities = mutableListOf<UncategorizedActivity>()
+suspend fun parseData(data : String, progressReporter : (Int) -> Unit) : ActivityList {
   val lines = data.lines()
   val total = lines.size
   var currentLine = 0
+  val activities = mutableListOf<Activity>()
   lines.forEach { line ->
     currentLine += 1
     val l = line.trim().replace(' ', ' ')
     if (l.isEmpty()) return@forEach
-    val activity = Activity.parse(l)
-    dataSet.categorize(activity)?.let { uncategorizedActivities.add(it) }
+    activities.add(Activity.parse(l))
     progressReporter((100 * currentLine) / total)
     yield()
   }
   progressReporter((100 * currentLine) / total)
-  if (uncategorizedActivities.isNotEmpty()) throw UncategorizedActivities(uncategorizedActivities)
-  return dataSet
+  return ActivityList(activities)
 }
 
 suspend fun resizeCanvas() : Pair<Int, Int> {
@@ -80,15 +80,31 @@ fun CoroutineScope.launchHandlingError(context: CoroutineContext = EmptyCoroutin
   handleError { block() }
 }
 
+val DATE_PATTERN = Regex("(\\d\\d\\d\\d)-(\\d\\d)-(\\d\\d) (\\d\\d):(\\d\\d)")
+fun tryUpdateDate() {
+  fun timestamp(d : MatchResult) = makeTimestamp(d.groupValues[1].toInt(), d.groupValues[2].toInt(), d.groupValues[3].toInt(),
+      d.groupValues[4].toInt(), d.groupValues[5].toInt())
+
+  val startMatch = DATE_PATTERN.matchEntire(startDateInput.value) ?: return
+  val endMatch = DATE_PATTERN.matchEntire(endDateInput.value) ?: return
+  val start = timestamp(startMatch)
+  val end = timestamp(endMatch)
+  mainScope.launchHandlingError { log2.setDates(start, end) }
+}
+
 fun main() {
   window.onload = {
     val progressRules = el("progressRules").first
     val progressData = el("progressData").first
+    val progressGroup = el("progressGroup").first
     mainScope.launchHandlingError {
       val rules = parseRules(rules) { progressRules.style.width = "${it}%" }
-      val dataSet = parseData(rules, data) { progressData.style.width = "${it}%"}
-      dataSet.prune()
-      log2 = Log2(surface, rules, dataSet)
+      val activities = parseData(data) { progressData.style.width = "${it}%"}
+      log2 = Log2(surface, rules, activities) { progressGroup.style.width = "${it}%" }
+      startDateInput.value = log2.startDate.toReadableString()
+      endDateInput.value = log2.endDate.toReadableString()
+      startDateInput.addOnInputListener { tryUpdateDate() }
+      endDateInput.addOnInputListener { tryUpdateDate() }
       // To render the graph after the first layout pass, once the size is known
       window.requestAnimationFrame { window.setTimeout({ window.onresize?.invoke(UIEvent("resize")) }) }
       removeLoading()

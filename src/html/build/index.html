@@ -6,10 +6,19 @@
         Loading...
         <div id="progressRules" class="progressOut"><div class="progressIn" style="width : 0px;"></div></div>
         <div id="progressData" class="progressOut"><div class="progressIn" style="width : 0px;"></div></div>
+        <div id="progressGroup" class="progressOut"><div class="progressIn" style="width : 0px;"></div></div>
     </div>
 </div>
 <div id="main" class="hidden matchParent">
-    <div id="toolBar" class="toolBar"></div>
+    <div id="toolBar" class="toolBar">
+        <table>
+            <tr>
+                <td>From</td><td><input type="text" name="startDate" id="startDate" /></td>
+            </tr><tr>
+                <td>To</td>  <td><input type="text" name="endDate"   id="endDate"   /></td>
+            </tr>
+        </table>
+    </div>
 
     <div id="content">
         <div id="activityList"></div>

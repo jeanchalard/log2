@@ -30,7 +30,23 @@ class TagGroup(val canon : Tag) {
   }
 }
 
-class DataSet(private val rules : Rules) {
+suspend fun GroupSet(rules : Rules, activities : ActivityList, progressReporter : (Int) -> Unit) : GroupSet {
+  val groupSet = GroupSet(rules)
+  val uncategorizedActivities = mutableListOf<UncategorizedActivity>()
+  val total = activities.size
+  var currentLine = 0
+  activities.forEach {
+    currentLine += 1
+    groupSet.categorize(it)?.let { uncategorizedActivities.add(it) }
+    progressReporter((100 * currentLine) / total)
+  }
+  progressReporter((100 * currentLine) / total)
+  if (uncategorizedActivities.isNotEmpty()) throw UncategorizedActivities(uncategorizedActivities)
+  groupSet.prune()
+  return groupSet
+}
+
+class GroupSet(private val rules : Rules) {
   val top : Group
   private val groups = rules.categories.map { Group(it) }
     .groupBy { it.canon.name.lowercase() }

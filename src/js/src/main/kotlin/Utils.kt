@@ -17,9 +17,8 @@ typealias Timestamp = Int
 typealias Minute = Int
 
 fun Timestamp.toMinute() = (this % 1440)
-private const val zoneShift = 9L * 3_600_000 // Japan time zone
 fun Timestamp.toReadableString() : String {
-  val d = Date(this.toLong() * 60_000 + zoneShift)
+  val d = Date(this.toLong() * 60_000)
   return "${d.getFullYear()}-${(d.getMonth()+1).dg()}-${d.getDate().dg()} ${d.getHours().dg()}:${d.getMinutes().dg()}"
 }
 fun makeTimestamp(year : Int, month : Int, day : Int, hour : Int, minute : Int) : Timestamp {

@@ -5,15 +5,12 @@ import kotlin.math.atan
 import kotlin.math.min
 
 // In place of a suspending constructor
-suspend fun Log2(surface : HTMLCanvasElement, rules : Rules, dataSet : DataSet) : Log2 {
+suspend fun Log2(surface : HTMLCanvasElement, rules : Rules, data : ActivityList, progressReporter : (Int) -> Unit) : Log2 {
   val renderer = Renderer(surface)
   yield()
-  val tree = GroupTree(dataSet.top)
+  val log2 = Log2(surface, renderer, rules, data, progressReporter)
   yield()
-  tree.render(el("activityList"))
-  yield()
-
-  val log2 = Log2(surface, rules, dataSet, renderer, tree)
+  log2.setDates(data.startDate, data.endDate)
 
   window.onresize = {
     mainScope.launchHandlingError {
@@ -28,17 +25,43 @@ suspend fun Log2(surface : HTMLCanvasElement, rules : Rules, dataSet : DataSet) 
   return log2
 }
 
-class Log2 internal constructor(private val surface : HTMLCanvasElement, private val rules : Rules,
-                               private val dataSet : DataSet, private val renderer : Renderer,
-                               private val tree : GroupTree) {
-  private val currentGroup = dataSet.top
+class Log2 internal constructor(private val surface : HTMLCanvasElement, private val renderer : Renderer,
+                                private val rules : Rules, private val data : ActivityList,
+                                private val progressReporter : (Int) -> Unit) {
+  val startDate : Timestamp
+    get() = activities.startDate
+  val endDate : Timestamp
+    get() = activities.endDate
+
+  private lateinit var currentGroup : Group
 
   private var hoveredGroup : Group? = null
     set(g) {
-      if (field == g) return
+      if (field === g) return
       field = g
       console.log("HoveredGroup ${g?.canon?.name}")
     }
+
+  private lateinit var activities : ActivityList
+  private lateinit var groupSet : GroupSet
+  private lateinit var tree : GroupTree
+  suspend fun setDates(from : Timestamp, end : Timestamp) {
+    val acts = data.view(from, end)
+    yield()
+    val gs = GroupSet(rules, acts, progressReporter)
+    yield()
+    val tr = GroupTree(gs.top)
+    yield()
+    run<Unit> {
+      activities = acts
+      groupSet = gs
+      tree = tr
+    }
+    tree.render(el("activityList"))
+    yield()
+    currentGroup = gs.top
+    startAnimation()
+  }
 
   fun startAnimation() {
     @Suppress("UNUSED_PARAMETER") // It's a callback dude
@@ -77,5 +100,12 @@ class Log2 internal constructor(private val surface : HTMLCanvasElement, private
         }
       }
     }
+
+//    overlay.addMouseClickListener {
+//      val target = hoveredGroup
+//      if (null == hoveredGroup && currentGroup.pa)
+//
+//            hoveredGroup?.let { currentGroup = it }
+//    }
   }
 }
