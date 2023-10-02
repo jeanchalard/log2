@@ -26,7 +26,7 @@ fun makeTimestamp(year : Int, month : Int, day : Int, hour : Int, minute : Int) 
   return (d.getTime().toLong() / 60_000).toInt()
 }
 
-operator fun Int.not() = when {
+private operator fun Int.not() = when {
   this < 0 -> "-0${abs(this)}"
   this < 10 -> "0${this}"
   else -> toString()

@@ -1,14 +1,21 @@
 import kotlinx.browser.window
 import kotlinx.coroutines.yield
+import kotlinx.html.TagConsumer
+import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
 import kotlin.math.atan
 import kotlin.math.min
+import kotlinx.html.dom.append
+import kotlinx.html.js.div
+import kotlinx.html.style
+import org.w3c.dom.HTMLElement
 
 // In place of a suspending constructor
-suspend fun Log2(surface : HTMLCanvasElement, rules : Rules, data : ActivityList, progressReporter : (Int) -> Unit) : Log2 {
+suspend fun Log2(surface : HTMLCanvasElement, breadcrumbs : Element, currentGroup : Element,
+                 rules : Rules, data : ActivityList, progressReporter : (Int) -> Unit) : Log2 {
   val renderer = Renderer(surface)
   yield()
-  val log2 = Log2(surface, renderer, rules, data, progressReporter)
+  val log2 = Log2(surface, breadcrumbs, currentGroup, renderer, rules, data, progressReporter)
   yield()
   log2.setDates(data.startDate, data.endDate)
 
@@ -25,7 +32,8 @@ suspend fun Log2(surface : HTMLCanvasElement, rules : Rules, data : ActivityList
   return log2
 }
 
-class Log2 internal constructor(private val surface : HTMLCanvasElement, private val renderer : Renderer,
+class Log2 internal constructor(private val surface : HTMLCanvasElement, private val breadcrumbs : Element, private val currentGroupHtml : Element,
+                                private val renderer : Renderer,
                                 private val rules : Rules, private val data : ActivityList,
                                 private val progressReporter : (Int) -> Unit) {
   val startDate : Timestamp
@@ -33,14 +41,15 @@ class Log2 internal constructor(private val surface : HTMLCanvasElement, private
   val endDate : Timestamp
     get() = activities.endDate
 
-  private lateinit var currentGroup : Group
+  private val groupStack = ArrayDeque<Group>()
+  private var currentGroup : Group = Group(Category.TOP)
+    set(g) {
+      if (g === field) return
+      field = g
+      startAnimation()
+    }
 
   private var hoveredGroup : Group? = null
-    set(g) {
-      if (field === g) return
-      field = g
-      console.log("HoveredGroup ${g?.canon?.name}")
-    }
 
   private lateinit var activities : ActivityList
   private lateinit var groupSet : GroupSet
@@ -50,7 +59,7 @@ class Log2 internal constructor(private val surface : HTMLCanvasElement, private
     yield()
     val gs = GroupSet(rules, acts, progressReporter)
     yield()
-    val tr = GroupTree(gs.top)
+    val tr = GroupTree(gs.top, rules.colors)
     yield()
     run<Unit> {
       activities = acts
@@ -60,6 +69,9 @@ class Log2 internal constructor(private val surface : HTMLCanvasElement, private
     tree.render(el("activityList"))
     yield()
     currentGroup = gs.top
+    yield()
+    renderBreadcrumbs(groupStack)
+    yield()
     startAnimation()
   }
 
@@ -71,6 +83,25 @@ class Log2 internal constructor(private val surface : HTMLCanvasElement, private
       }
     }
     step(0.0)
+  }
+
+  private fun TagConsumer<HTMLElement>.breadcrumb(group : Group) {
+    div(classes = "breadcrumb") {
+      val color = rules.colors[group.canon.name] ?: arrayOf(1f, 1f, 1f)
+      style = "background-color : rgb(${color.map{it*255}.joinToString(",")})"
+      +group.canon.name
+    }
+  }
+
+  private fun renderBreadcrumbs(stack : ArrayDeque<Group>) {
+    breadcrumbs.innerHTML = ""
+    stack.forEach { group ->
+      breadcrumbs.append {
+        breadcrumb(group)
+      }
+    }
+    breadcrumbs.append { breadcrumb(currentGroup) }
+    currentGroupHtml.innerHTML = "${currentGroup.canon.name} (${currentGroup.totalMinutes.renderDuration()})"
   }
 
   internal fun registerMouseListeners() {
@@ -101,11 +132,15 @@ class Log2 internal constructor(private val surface : HTMLCanvasElement, private
       }
     }
 
-//    overlay.addMouseClickListener {
-//      val target = hoveredGroup
-//      if (null == hoveredGroup && currentGroup.pa)
-//
-//            hoveredGroup?.let { currentGroup = it }
-//    }
+    overlay.addMouseClickListener {
+      val target = hoveredGroup
+      if (null != target) {
+        groupStack.add(currentGroup)
+        currentGroup = target
+      } else if (groupStack.size > 0) {
+        currentGroup = groupStack.removeLast()
+      }
+      renderBreadcrumbs(groupStack)
+    }
   }
 }

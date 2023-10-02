@@ -187,5 +187,6 @@ suspend fun parseRules(rules : String, progressReporter : (Int) -> Unit) : Rules
   }
   progressReporter((100 * currentLine) / total)
   val name = fileName ?: throw IllegalRuleFormatException("No name for this set of rules, add [general] name=...")
-  return Rules(name, associations, colors.toMap())
+  colors[Category.TOP.name] = arrayOf(1f, 1f, 1f)
+  return Rules(name, associations, AutoColorMap(colors.toMap()))
 }

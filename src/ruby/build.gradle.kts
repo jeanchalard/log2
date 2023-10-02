@@ -1,5 +1,5 @@
 val rules = "calendar"
-val data = "data/2023_*"
+val data = "data/2023_0*"
 
 val out = "${rootDir}/../out"
 

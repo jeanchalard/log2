@@ -62,6 +62,7 @@ suspend fun resizeCanvas() : Pair<Int, Int> {
   (surface as Element).styleString = sizeStyle
   el("camembert").styleString = sizeStyle
   el("overlay").styleString = sizeStyle
+  el("currentGroup").styleString = "width : ${remainingWidth}px;"
 
   return remainingWidth to remainingHeight
 }
@@ -100,7 +101,7 @@ fun main() {
     mainScope.launchHandlingError {
       val rules = parseRules(rules) { progressRules.style.width = "${it}%" }
       val activities = parseData(data) { progressData.style.width = "${it}%"}
-      log2 = Log2(surface, rules, activities) { progressGroup.style.width = "${it}%" }
+      log2 = Log2(surface, el("breadcrumbs"), el("currentGroup"), rules, activities) { progressGroup.style.width = "${it}%" }
       startDateInput.value = log2.startDate.toReadableString()
       endDateInput.value = log2.endDate.toReadableString()
       startDateInput.addOnInputListener { tryUpdateDate() }

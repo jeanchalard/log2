@@ -19,7 +19,7 @@ const val vertexShader = """
 const val fragmentShader = """
   precision mediump float;
 
-  uniform vec3 colors[${MAX_SUBCATS * 3}];
+  uniform vec3 colors[${MAX_SUBCATS}];
   uniform float percentiles[${MAX_SUBCATS}];
   
   const float TAU = 6.28318;
@@ -35,7 +35,7 @@ const val fragmentShader = """
 
   vec3 colorForPercentile(float percentile) {
     for (int i = 0; i < ${MAX_SUBCATS}; i++) {
-      if (percentiles[i] > percentile) return colors[i];
+      if (percentiles[i] > percentile) return colors[i-1];
     }
     return vec3(0.);
   }
@@ -108,7 +108,7 @@ class Renderer(surface : HTMLCanvasElement) {
 
   private fun interpolate(out : Array<Float>, end : Array<Float>) : Boolean {
     var finish = true
-    (0..out.size).forEach { i ->
+    out.indices.forEach { i ->
       val diff = end[i] - out[i]
       out[i] += 0.1f * diff
       if (abs(diff) > 0.001) finish = false
@@ -121,12 +121,10 @@ class Renderer(surface : HTMLCanvasElement) {
   private val colorVals = mutableListOf<Float>()
   fun render(group : Group, colors : Map<String, Array<Float>>) : Boolean {
     if (group !== lastGroup) {
-      console.log("RENDER")
       lastGroup = group
       percentiles.clear()
       colorVals.clear()
       percentiles.add(0f)
-      colorVals.add(0f)
       group.children.forEach { child ->
         percentiles.add(percentiles.last() + child.totalMinutes.toFloat() / group.totalMinutes)
         val c = colors[child.canon.name] ?: arrayOf(1f, 1f, 1f)

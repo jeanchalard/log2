@@ -10,7 +10,7 @@ import kotlinx.html.js.ul
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 
-class GroupTree(private val top : Group) {
+class GroupTree(private val top : Group, private val colors : Map<String, Array<Float>>) {
   companion object {
     private val uniqueId = atomic(1)
     private fun nextId() = "tree${uniqueId.getAndIncrement()}"
@@ -33,6 +33,8 @@ class GroupTree(private val top : Group) {
       else
         +realDuration
     }
+    val color = colors[group.canon.name] ?: arrayOf(1f, 1f, 1f)
+    (header as Element).style["color"] = "rgb(${color.map{it*255}.joinToString(",")})"
 
     val leaf = group.children.isEmpty()
 

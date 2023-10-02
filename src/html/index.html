@@ -11,7 +11,8 @@
 </div>
 <div id="main" class="hidden matchParent">
     <div id="toolBar" class="toolBar">
-        <table>
+        <div id="breadcrumbs"></div>
+        <table class="dateInput">
             <tr>
                 <td>From</td><td><input type="text" name="startDate" id="startDate" /></td>
             </tr><tr>
@@ -24,7 +25,9 @@
         <div id="activityList"></div>
         <div id="camembert">
             <canvas id="surface"></canvas>
-            <canvas id="overlay"></canvas>
+            <canvas id="overlay">
+            </canvas>
+            <div id="currentGroup">Yay</div>
         </div>
     </div>
 
