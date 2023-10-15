@@ -25,13 +25,15 @@ class GroupTree(private val top : Group, private val colors : Map<String, Array<
 
   private fun TagConsumer<HTMLElement>.render(group : Group, parent : Group?, id : String, depth : Int) {
     val header = span { +group.canon.name }
+    val parentTime = parent?.totalMinutes
     span(classes = "timeRender") {
       val parentWeight = group.parentWeight(parent)
-      val realDuration = (group.totalMinutes * parentWeight).toInt().renderDuration()
+      val realDuration = (group.totalMinutes * parentWeight).toInt()
+      val percent = if (null == parentTime) " " else (100f * realDuration / parentTime).renderPercent() + " "
       if (parentWeight < 1f)
-        +"${realDuration} (${group.totalMinutes.renderDuration()} * ${!parentWeight})"
+        +"${percent}${realDuration.renderDuration()} (${group.totalMinutes.renderDuration()} * ${!parentWeight})"
       else
-        +realDuration
+        +"${percent}${realDuration.renderDuration()}"
     }
     val color = colors[group.canon.name] ?: arrayOf(1f, 1f, 1f)
     (header as Element).style["color"] = "rgb(${color.map{it*255}.joinToString(",")})"

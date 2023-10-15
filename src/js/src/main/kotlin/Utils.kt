@@ -40,3 +40,5 @@ operator fun Float.not() = toString().let {
     else -> it.substring(0..(dotIndex + 3))
   }
 }
+
+fun Float.renderPercent() = "${toInt()}.${(10 * this).toInt() % 10}%"

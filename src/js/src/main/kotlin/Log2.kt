@@ -6,9 +6,13 @@ import org.w3c.dom.HTMLCanvasElement
 import kotlin.math.atan
 import kotlin.math.min
 import kotlinx.html.dom.append
+import kotlinx.html.js.br
 import kotlinx.html.js.div
+import kotlinx.html.js.p
 import kotlinx.html.style
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.events.MouseEvent
+import kotlin.math.roundToInt
 
 // In place of a suspending constructor
 suspend fun Log2(surface : HTMLCanvasElement, breadcrumbs : Element, currentGroup : Element,
@@ -69,6 +73,7 @@ class Log2 internal constructor(private val surface : HTMLCanvasElement, private
     tree.render(el("activityList"))
     yield()
     currentGroup = gs.top
+    groupStack.clear()
     yield()
     renderBreadcrumbs(groupStack)
     yield()
@@ -90,6 +95,14 @@ class Log2 internal constructor(private val surface : HTMLCanvasElement, private
       val color = rules.colors[group.canon.name] ?: arrayOf(1f, 1f, 1f)
       style = "background-color : rgb(${color.map{it*255}.joinToString(",")})"
       +group.canon.name
+      br {}
+      +"${group.totalMinutes.renderDuration()} (${(1440f * group.totalMinutes/(endDate - startDate)).roundToInt().renderDuration()}/d)"
+    }.addMouseClickListener {
+      while (groupStack.last() != group) {
+        groupStack.removeLast()
+      }
+      currentGroup = groupStack.removeLast()
+      renderBreadcrumbs(groupStack)
     }
   }
 
@@ -106,17 +119,17 @@ class Log2 internal constructor(private val surface : HTMLCanvasElement, private
 
   internal fun registerMouseListeners() {
     val overlay = el("overlay")
-    overlay.addMouseMoveListener {
+    fun mouseMoveListener(it : MouseEvent) {
       val s = min(overlay.clientWidth, overlay.clientHeight)
       val x = (it.offsetX.toFloat() - overlay.clientWidth / 2) / s
       val y = (it.offsetY.toFloat() - overlay.clientHeight / 2) / s
       val lengthSquared = x * x + y * y
       if (lengthSquared > RADIUS * RADIUS) {
         hoveredGroup = null
-        return@addMouseMoveListener
+        return
       }
       val group = currentGroup
-      var angle = when {
+      val angle = when {
         y <= 0 && x >= 0 -> atan(-y / x) / TAU
         y <= 0 && x <= 0 -> 0.5f - atan(y / x) / TAU
         y >= 0 && x <= 0 -> atan(-y / x) / TAU + 0.5f
@@ -127,16 +140,20 @@ class Log2 internal constructor(private val surface : HTMLCanvasElement, private
         minute -= it.totalMinutes
         if (minute <= 0) {
           hoveredGroup = it
-          return@addMouseMoveListener
+          return
         }
       }
     }
 
+    overlay.addMouseMoveListener(::mouseMoveListener)
+
     overlay.addMouseClickListener {
       val target = hoveredGroup
+      if (currentGroup == target) return@addMouseClickListener
       if (null != target) {
         groupStack.add(currentGroup)
         currentGroup = target
+        mouseMoveListener(it)
       } else if (groupStack.size > 0) {
         currentGroup = groupStack.removeLast()
       }
