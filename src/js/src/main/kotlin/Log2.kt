@@ -1,17 +1,16 @@
 import kotlinx.browser.window
 import kotlinx.coroutines.yield
 import kotlinx.html.TagConsumer
-import org.w3c.dom.Element
-import org.w3c.dom.HTMLCanvasElement
-import kotlin.math.atan
-import kotlin.math.min
 import kotlinx.html.dom.append
 import kotlinx.html.js.br
 import kotlinx.html.js.div
-import kotlinx.html.js.p
 import kotlinx.html.style
+import org.w3c.dom.Element
+import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.MouseEvent
+import kotlin.math.atan
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 // In place of a suspending constructor
@@ -91,7 +90,7 @@ class Log2 internal constructor(private val surface : HTMLCanvasElement, private
   }
 
   private fun TagConsumer<HTMLElement>.breadcrumb(group : Group) {
-    div(classes = "breadcrumb") {
+    div(classes = "breadcrumb handCursor") {
       val color = rules.colors[group.canon.name] ?: arrayOf(1f, 1f, 1f)
       style = "background-color : rgb(${color.map{it*255}.joinToString(",")})"
       +group.canon.name

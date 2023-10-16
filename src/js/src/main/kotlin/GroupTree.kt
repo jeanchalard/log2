@@ -24,7 +24,8 @@ class GroupTree(private val top : Group, private val colors : Map<String, Array<
     parents.find { it.group == parent }?.weight ?: 1.0f
 
   private fun TagConsumer<HTMLElement>.render(group : Group, parent : Group?, id : String, depth : Int) {
-    val header = span { +group.canon.name }
+    val leaf = group.children.isEmpty()
+    val header = span(classes = if (leaf) "" else "handCursor") { +group.canon.name }
     val parentTime = parent?.totalMinutes
     span(classes = "timeRender") {
       val parentWeight = group.parentWeight(parent)
@@ -37,8 +38,6 @@ class GroupTree(private val top : Group, private val colors : Map<String, Array<
     }
     val color = colors[group.canon.name] ?: arrayOf(1f, 1f, 1f)
     (header as Element).style["color"] = "rgb(${color.map{it*255}.joinToString(",")})"
-
-    val leaf = group.children.isEmpty()
 
     val children = if (leaf) null else ul {
       if (group.activities.isNotEmpty()) {
