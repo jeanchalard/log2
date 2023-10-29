@@ -15,11 +15,13 @@ class GroupTree(private val model : Log2, private val anchor : Element, private 
     private val uniqueId = atomic(1)
     private fun nextId() = "tree${uniqueId.getAndIncrement()}"
   }
+  private val updater = this::updateCurrentGroup
   init {
-    model.currentGroupProp.listen(this::updateCurrentGroup)
+    model.currentGroupProp.listen(updater)
+    render()
   }
   fun delete() {
-    model.currentGroupProp.unlisten(this::updateCurrentGroup)
+    model.currentGroupProp.unlisten(updater)
   }
 
   private fun updateCurrentGroup(oldGroup : Group, newGroup : Group) {
@@ -42,7 +44,7 @@ class GroupTree(private val model : Log2, private val anchor : Element, private 
     else -> ancestorOf(descendant.parentElement)
   }
 
-  fun render() {
+  private fun render() {
     anchor.innerHTML = ""
     anchor.append { render(top, null, id = nextId(), depth = 0) }
   }

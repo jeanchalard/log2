@@ -180,8 +180,8 @@ class Log2 internal constructor(
       tree = tr
       oldTree?.delete()
     }
-    tr.render()
     yield()
+    groupStack.clear()
     currentGroup = gs.top
     yield()
   }
