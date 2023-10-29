@@ -1,7 +1,14 @@
+import kotlinx.atomicfu.atomic
+
 class UncategorizedActivity(val activity : Activity, m : String) : Exception(m)
 
 data class WeightedGroup(val group : Group, val weight : Float)
 class Group(val canon : Category) {
+  companion object {
+    private val uniqueId = atomic(1)
+    private fun nextId() = "group${uniqueId.getAndIncrement()}"
+  }
+  val id = nextId()
   val activities = mutableListOf<Activity>()
   val parents = mutableListOf<WeightedGroup>()
   val children = mutableListOf<Group>()

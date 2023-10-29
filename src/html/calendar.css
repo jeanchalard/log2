@@ -218,3 +218,8 @@ li.closed:before {
   padding-right : 0.5em;
   content : "\2BC8";
 }
+li.active {
+  border-width : 1.5px;
+  border-style : solid;
+  border-color : #fcfcfc;
+}

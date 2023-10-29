@@ -10,12 +10,39 @@ import kotlinx.html.js.ul
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 
-class GroupTree(private val top : Group, private val colors : Map<String, Array<Float>>) {
+class GroupTree(private val model : Log2, private val anchor : Element, private val top : Group, private val colors : Map<String, Array<Float>>) {
   companion object {
     private val uniqueId = atomic(1)
     private fun nextId() = "tree${uniqueId.getAndIncrement()}"
   }
-  fun render(anchor : Element) {
+  init {
+    model.currentGroupProp.listen(this::updateCurrentGroup)
+  }
+  fun delete() {
+    model.currentGroupProp.unlisten(this::updateCurrentGroup)
+  }
+
+  private fun updateCurrentGroup(oldGroup : Group, newGroup : Group) {
+    val newEl = elOrNull(newGroup.id)
+    if (null != newEl) {
+      active(newEl)
+      open(newEl)
+    }
+    val oldEl = elOrNull(oldGroup.id)
+    if (null != oldEl) {
+      inactive(oldEl)
+      if (!oldEl.ancestorOf(newEl))
+        close(oldEl)
+    }
+  }
+
+  private fun Element.ancestorOf(descendant : Element?) : Boolean = when (descendant) {
+    null -> false
+    this -> true
+    else -> ancestorOf(descendant.parentElement)
+  }
+
+  fun render() {
     anchor.innerHTML = ""
     anchor.append { render(top, null, id = nextId(), depth = 0) }
   }
@@ -26,6 +53,7 @@ class GroupTree(private val top : Group, private val colors : Map<String, Array<
   private fun TagConsumer<HTMLElement>.render(group : Group, parent : Group?, id : String, depth : Int) {
     val leaf = group.children.isEmpty()
     val header = span(classes = if (leaf) "" else "handCursor") { +group.canon.name }
+    if ("" == header.parentElement!!.id) header.parentElement!!.id = group.id
     val parentTime = parent?.totalMinutes
     span(classes = "timeRender") {
       val parentWeight = group.parentWeight(parent)
@@ -60,15 +88,10 @@ class GroupTree(private val top : Group, private val colors : Map<String, Array<
       children?.addClass("branch")
       header.onclick = {
         val li = (it.target as HTMLElement).parentElement!!
-        if (li.hasClass("open")) {
-          li.removeClass("open")
-          li.addClass("closed")
-          el(id).style["display"] = "none"
-        } else {
-          li.removeClass("closed")
-          li.addClass("open")
-          el(id).style["display"] = null
-        }
+        if (li.hasClass("open"))
+          close(li)
+        else
+          open(li)
       }
 
       if (depth < 1) {
@@ -78,5 +101,20 @@ class GroupTree(private val top : Group, private val colors : Map<String, Array<
         (children as Element).style["display"] = "none"
       }
     }
+  }
+
+  private fun inactive(el : Element) = el.removeClass("active")
+  private fun active(el : Element) = el.addClass("active")
+
+  private fun close(el : Element) {
+    el.removeClass("open")
+    el.addClass("closed")
+    el.getElementsByTagName("ul").item(0)?.run { style["display"] = "none" }
+  }
+
+  private fun open(el : Element) {
+    el.removeClass("closed")
+    el.addClass("open")
+    el.getElementsByTagName("ul").item(0)?.run { style["display"] = null }
   }
 }

@@ -5,10 +5,7 @@ import kotlinx.dom.removeClass
 import kotlinx.html.br
 import kotlinx.html.div
 import kotlinx.html.dom.append
-import org.w3c.dom.Element
-import org.w3c.dom.HTMLCanvasElement
-import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.asList
+import org.w3c.dom.*
 import org.w3c.dom.events.UIEvent
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -16,7 +13,7 @@ import kotlin.coroutines.EmptyCoroutineContext
 external val rules : String
 external val data : String
 val mainScope = MainScope()
-lateinit var log2 : Log2
+private lateinit var log2 : Log2
 
 class HTMLElementNotFound(msg : String) : Exception(msg)
 
@@ -47,15 +44,15 @@ suspend fun parseData(data : String, progressReporter : (Int) -> Unit) : Activit
 }
 
 suspend fun resizeCanvas() : Pair<Int, Int> {
-  val parent = el("content")
-  val activityList = el("activityList")
-  val siblings = parent.parentElement!!.children.asList()
-  val remainingHeight = siblings.fold(parent.parentElement!!.clientHeight) {
-      acc, e -> if (e.id == "content") acc else acc - e.clientHeight
+  val parent = el("content") as HTMLElement
+  val activityList = el("activityList") as HTMLElement
+  val siblings = parent.parentElement!!.children.asList().map { it as HTMLElement }
+  val remainingHeight = siblings.fold((parent.parentElement!! as HTMLElement).offsetHeight) {
+      acc, e -> if (e.id == "content") acc else acc - e.offsetHeight
   }
   activityList.styleString = "height:${remainingHeight}px;"
   yield()
-  val remainingWidth = parent.clientWidth - activityList.clientWidth
+  val remainingWidth = parent.clientWidth - activityList.offsetWidth
   surface.setAttribute("width", "${remainingWidth}px")
   surface.setAttribute("height", "${remainingHeight}px")
   val sizeStyle = "width : ${remainingWidth}px; height : ${remainingHeight}px;"

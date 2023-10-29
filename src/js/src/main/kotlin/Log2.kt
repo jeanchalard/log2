@@ -13,110 +13,56 @@ import kotlin.math.atan
 import kotlin.math.min
 import kotlin.math.roundToInt
 
+typealias ColorMap = Map<String, Array<Float>>
+
+
 // In place of a suspending constructor
 suspend fun Log2(surface : HTMLCanvasElement, breadcrumbs : Element, currentGroup : Element,
                  rules : Rules, data : ActivityList, progressReporter : (Int) -> Unit) : Log2 {
   val renderer = Renderer(surface)
   yield()
-  val log2 = Log2(surface, breadcrumbs, currentGroup, renderer, rules, data, progressReporter)
+  val model = Log2(rules, data, progressReporter)
   yield()
-  log2.setDates(data.startDate, data.endDate)
+  val camembertView = CamembertView(model, renderer, rules.colors)
+  yield()
+  val breadcrumbView = BreadcrumbView(model, breadcrumbs, currentGroup, rules.colors)
+  yield()
+  model.setDates(data.startDate, data.endDate)
 
   window.onresize = {
     mainScope.launchHandlingError {
       val (w, h) = resizeCanvas()
       renderer.sizeViewPort(w, h)
-      log2.startAnimation()
+      camembertView.startAnimation(model.currentGroup)
     }
   }
 
-  log2.registerMouseListeners()
-
-  return log2
+  return model
 }
 
-class Log2 internal constructor(private val surface : HTMLCanvasElement, private val breadcrumbs : Element, private val currentGroupHtml : Element,
-                                private val renderer : Renderer,
-                                private val rules : Rules, private val data : ActivityList,
-                                private val progressReporter : (Int) -> Unit) {
-  val startDate : Timestamp
-    get() = activities.startDate
-  val endDate : Timestamp
-    get() = activities.endDate
-
-  private val groupStack = ArrayDeque<Group>()
-  private var currentGroup : Group = Group(Category.TOP)
-    set(g) {
-      if (g === field) return
-      field = g
-      startAnimation()
+class CamembertView(val model : Log2, private val renderer : Renderer, private val colorMap : ColorMap) {
+  init {
+    model.currentGroupProp.listen { old, new ->
+      startAnimation(new)
     }
+    registerMouseListeners()
+  }
 
   private var hoveredGroup : Group? = null
 
-  private lateinit var activities : ActivityList
-  private lateinit var groupSet : GroupSet
-  private lateinit var tree : GroupTree
-  suspend fun setDates(from : Timestamp, end : Timestamp) {
-    val acts = data.view(from, end)
-    yield()
-    val gs = GroupSet(rules, acts, progressReporter)
-    yield()
-    val tr = GroupTree(gs.top, rules.colors)
-    yield()
-    run<Unit> {
-      activities = acts
-      groupSet = gs
-      tree = tr
-    }
-    tree.render(el("activityList"))
-    yield()
-    currentGroup = gs.top
-    groupStack.clear()
-    yield()
-    renderBreadcrumbs(groupStack)
-    yield()
-    startAnimation()
-  }
-
-  fun startAnimation() {
+  private var destGroup : Group = model.currentGroup
+  fun startAnimation(g : Group) {
+    destGroup = g
     @Suppress("UNUSED_PARAMETER") // It's a callback dude
     fun step(timestamp : Double) {
-      if (!renderer.render(currentGroup, rules.colors)) {
+      if (!renderer.render(destGroup, colorMap)) {
         window.requestAnimationFrame { step(it) }
       }
     }
     step(0.0)
   }
 
-  private fun TagConsumer<HTMLElement>.breadcrumb(group : Group) {
-    div(classes = "breadcrumb handCursor") {
-      val color = rules.colors[group.canon.name] ?: arrayOf(1f, 1f, 1f)
-      style = "background-color : rgb(${color.map{it*255}.joinToString(",")})"
-      +group.canon.name
-      br {}
-      +"${group.totalMinutes.renderDuration()} (${(1440f * group.totalMinutes/(endDate - startDate)).roundToInt().renderDuration()}/d)"
-    }.addMouseClickListener {
-      while (groupStack.last() != group) {
-        groupStack.removeLast()
-      }
-      currentGroup = groupStack.removeLast()
-      renderBreadcrumbs(groupStack)
-    }
-  }
-
-  private fun renderBreadcrumbs(stack : ArrayDeque<Group>) {
-    breadcrumbs.innerHTML = ""
-    stack.forEach { group ->
-      breadcrumbs.append {
-        breadcrumb(group)
-      }
-    }
-    breadcrumbs.append { breadcrumb(currentGroup) }
-    currentGroupHtml.innerHTML = "${currentGroup.canon.name} (${currentGroup.totalMinutes.renderDuration()})"
-  }
-
-  internal fun registerMouseListeners() {
+  private fun registerMouseListeners() {
     val overlay = el("overlay")
     fun mouseMoveListener(it : MouseEvent) {
       val s = min(overlay.clientWidth, overlay.clientHeight)
@@ -127,7 +73,7 @@ class Log2 internal constructor(private val surface : HTMLCanvasElement, private
         hoveredGroup = null
         return
       }
-      val group = currentGroup
+      val group = model.currentGroup
       val angle = when {
         y <= 0 && x >= 0 -> atan(-y / x) / TAU
         y <= 0 && x <= 0 -> 0.5f - atan(y / x) / TAU
@@ -145,18 +91,98 @@ class Log2 internal constructor(private val surface : HTMLCanvasElement, private
     }
 
     overlay.addMouseMoveListener(::mouseMoveListener)
-
     overlay.addMouseClickListener {
       val target = hoveredGroup
-      if (currentGroup == target) return@addMouseClickListener
-      if (null != target) {
-        groupStack.add(currentGroup)
-        currentGroup = target
+      if (null == target)
+        model.popStack()
+      else {
+        console.log(""+hoveredGroup?.canon?.name)
+        model.currentGroup = target
         mouseMoveListener(it)
-      } else if (groupStack.size > 0) {
-        currentGroup = groupStack.removeLast()
       }
-      renderBreadcrumbs(groupStack)
     }
+  }
+
+}
+
+class BreadcrumbView(private val model : Log2,
+                     private val breadcrumbs : Element, private val currentGroupHtml : Element, private val colorMap : ColorMap) {
+  init {
+    model.currentGroupProp.listen { _, _ -> render() }
+  }
+
+  private fun render() {
+    val top = model.stack.last()
+    breadcrumbs.innerHTML = ""
+    model.stack.forEach { group ->
+      breadcrumbs.append {
+        breadcrumb(group)
+      }
+    }
+    currentGroupHtml.innerHTML = "${top.canon.name} (${top.totalMinutes.renderDuration()})"
+  }
+
+  private fun TagConsumer<HTMLElement>.breadcrumb(group : Group) {
+    div(classes = "breadcrumb handCursor") {
+      val color = colorMap[group.canon.name] ?: arrayOf(1f, 1f, 1f)
+      style = "background-color : rgb(${color.map{it*255}.joinToString(",")})"
+      +group.canon.name
+      br {}
+      +"${group.totalMinutes.renderDuration()} (${(1440f * group.totalMinutes / (model.endDate - model.startDate)).roundToInt().renderDuration()}/d)"
+    }.addMouseClickListener {
+      model.currentGroup = group
+    }
+  }
+}
+
+class Log2 internal constructor(
+  private val rules : Rules, private val data : ActivityList, private val progressReporter : (Int) -> Unit
+) {
+  val startDate : Timestamp
+    get() = activities.startDate
+  val endDate : Timestamp
+    get() = activities.endDate
+
+  private val groupStack = ArrayDeque<Group>()
+  var currentGroup : Group = Group(Category.TOP)
+    set(g) {
+      if (g === field) return
+      if (groupStack.contains(g)) {
+        while (groupStack.last() != g) groupStack.removeLast()
+      } else {
+        groupStack.add(g)
+      }
+      currentGroupProp.changed(field, g)
+      field = g
+    }
+  val currentGroupProp = Listenable(this::currentGroup)
+  val stack : Iterable<Group> = groupStack
+  fun popStack() {
+    if (groupStack.size <= 1) return
+    groupStack.removeLast()
+    currentGroup = groupStack.last()
+  }
+
+  private lateinit var activities : ActivityList
+  private lateinit var groupSet : GroupSet
+  private var tree : GroupTree? = null
+  suspend fun setDates(from : Timestamp, end : Timestamp) {
+    val acts = data.view(from, end)
+    yield()
+    val gs = GroupSet(rules, acts, progressReporter)
+    yield()
+    val tr = GroupTree(this, el("activityList"), gs.top, rules.colors)
+    yield()
+    run<Unit> {
+      activities = acts
+      groupSet = gs
+      val oldTree = tree
+      tree = tr
+      oldTree?.delete()
+    }
+    tr.render()
+    yield()
+    currentGroup = gs.top
+    yield()
   }
 }

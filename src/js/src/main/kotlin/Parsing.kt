@@ -84,7 +84,7 @@ private fun String.parseColor() : Array<Float> {
     ((this[5].parseHex() shl 4) + this[6].parseHex()).toFloat() / 255f)
 }
 
-enum class RuleMode { INITIAL, GENERAL, COLORS, RULES, COUNTERS, MARKERS }
+enum class RuleMode { INITIAL, GENERAL, COLORS, RULES, COUNTERS, MARKERS, EXCLUDE }
 suspend fun parseRules(rules : String, progressReporter : (Int) -> Unit) : Rules {
   var mode = RuleMode.INITIAL
   var caseInsensitive = false
@@ -140,6 +140,15 @@ suspend fun parseRules(rules : String, progressReporter : (Int) -> Unit) : Rules
     associations.add(assoc)
   }
 
+  //Exclude mode memory
+  val exclusions = mutableListOf<Assoc>()
+  fun exclude(regexpSpec : String, classification : String) {
+    val regexp = if (caseInsensitive) Regex(regexpSpec, RegexOption.IGNORE_CASE) else Regex(regexpSpec)
+    val category = allCategories[classification] ?: Category(classification, emptyList()).also { allCategories[classification] = it }
+    val excl = Assoc(regexp, listOf(WeightedCategory(category, 1f)), emptyList())
+    exclusions.add(excl)
+  }
+
   val lines = rules.lines()
   val total = lines.size
   var currentLine = 0
@@ -155,6 +164,7 @@ suspend fun parseRules(rules : String, progressReporter : (Int) -> Unit) : Rules
         "collapse", "rules" -> RuleMode.RULES
         "counters" -> RuleMode.COUNTERS
         "markers" -> RuleMode.MARKERS
+        "exclude" -> RuleMode.EXCLUDE
         else -> throw IllegalRuleFormatException("Unknown section ${spec}")
       }
       caseInsensitive = it.groups[2].notNull()
@@ -176,6 +186,11 @@ suspend fun parseRules(rules : String, progressReporter : (Int) -> Unit) : Rules
         // Markers are not parsed yet because they haven't been used in forever and need rethinking anyway
       }
 
+      RuleMode.EXCLUDE -> {
+        val spec = spec.split(equalsRegexp)
+        val classification = spec[spec.size - 1]
+        spec.dropLast(1).forEach { exclude(it, classification) }
+      }
       RuleMode.RULES -> {
         val spec = spec.split(equalsRegexp)
         val classification = spec[spec.size - 1]
@@ -188,5 +203,5 @@ suspend fun parseRules(rules : String, progressReporter : (Int) -> Unit) : Rules
   progressReporter((100 * currentLine) / total)
   val name = fileName ?: throw IllegalRuleFormatException("No name for this set of rules, add [general] name=...")
   colors[Category.TOP.name] = arrayOf(1f, 1f, 1f)
-  return Rules(name, associations, AutoColorMap(colors.toMap()))
+  return Rules(name, associations + exclusions, AutoColorMap(colors.toMap()))
 }
