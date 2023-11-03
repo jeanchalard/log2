@@ -27,15 +27,18 @@ suspend fun Log2(surface : HTMLCanvasElement, breadcrumbs : Element, currentGrou
   yield()
   val breadcrumbView = BreadcrumbView(model, breadcrumbs, currentGroup, rules.colors)
   yield()
+  val legendView = LegendView(model, overlay)
   model.setDates(data.startDate, data.endDate)
 
-  window.onresize = {
+  fun resize() {
     mainScope.launchHandlingError {
       val (w, h) = resizeCanvas()
       renderer.sizeViewPort(w, h)
       camembertView.startAnimation(model.currentGroup)
     }
   }
+  el("activityList").observeResize { _,_ -> resize() }
+  window.onresize = { resize() }
 
   return model
 }
