@@ -5,8 +5,7 @@ import kotlin.math.PI
 import kotlin.math.abs
 import org.khronos.webgl.WebGLRenderingContext as GL
 
-const val RADIUS = 0.45f
-const val MAX_SUBCATS = 100
+const val RADIUS = 0.35f
 const val TAU = (PI * 2).toFloat()
 const val vertexShader = """
   attribute vec4 vertexPos;
@@ -16,11 +15,17 @@ const val vertexShader = """
     gl_Position = cameraMat * modelMat * vertexPos;
   }
 """
-const val fragmentShader = """
+class Renderer(surface : HTMLCanvasElement) {
+  private val gl = surface.getContext("webgl") as GL
+  // No idea what the hell is at work here, this looks like yet another web bizarre bug^H^H^Hfeature. Why can't I
+  // create a uniform of uniformSize when it's reputed to be the max size ? Why can't I do it for half, but it's
+  // fine with / 2 - 1 ?
+  private val uniformSize = gl.getParameter(GL.MAX_FRAGMENT_UNIFORM_VECTORS) as Int / 2 - 1
+  private val fragmentShader = """
   precision mediump float;
 
-  uniform vec3 colors[${MAX_SUBCATS}];
-  uniform float percentiles[${MAX_SUBCATS}];
+  uniform vec3 colors[${uniformSize}];
+  uniform float percentiles[${uniformSize}];
   
   const float TAU = 6.28318;
   const float RADIUS = ${RADIUS};
@@ -34,14 +39,14 @@ const val fragmentShader = """
   }
 
   vec3 colorForPercentile(float percentile) {
-    for (int i = 0; i < ${MAX_SUBCATS}; i++) {
+    for (int i = 0; i < ${uniformSize}; i++) {
       if (percentiles[i] > percentile) return colors[i-1];
     }
     return vec3(0.);
   }
 
   vec2 boundsForPercentile(float percentile) {
-    for (int i = 0; i < ${MAX_SUBCATS}; i++) {
+    for (int i = 0; i < ${uniformSize}; i++) {
       if (percentiles[i] > percentile) return vec2(i == 0 ? 0. : percentiles[i - 1], percentiles[i]);
     }
     return vec2(0., 0.0001); // At least it won't crash
@@ -84,18 +89,18 @@ const val fragmentShader = """
   }
 """
 
-class Renderer(surface : HTMLCanvasElement) {
-  private val gl = surface.getContext("webgl") as GL
   private val shader : WebGLProgram
 
   // Identify if the group has changed (different set) or not (e.g. window resize) to see if animation should start
   private var lastGroup = Group(Category("none", emptyList()))
   // The current animation values, to avoid allocating every time
-  private val currentColors = Array(MAX_SUBCATS * 3) { 0f }
-  private val currentPercentiles = Array(MAX_SUBCATS) { 0f }
+  private val currentColors = Array(uniformSize * 3) { 0f }
+  private val currentPercentiles = Array(uniformSize) { 0f }
   // The animation end values
-  private val endColors = Array(MAX_SUBCATS * 3) { 0f }
-  private val endPercentiles = Array(MAX_SUBCATS) { 0f }
+  private val endColors = Array(uniformSize * 3) { 0f }
+  private val endPercentiles = Array(uniformSize) { 0f }
+
+  lateinit var groupSet : GroupSet
 
   init {
     setupSurface()

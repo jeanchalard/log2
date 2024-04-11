@@ -1,4 +1,5 @@
 import kotlinx.browser.window
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.yield
 import kotlinx.html.TagConsumer
 import kotlinx.html.dom.append
@@ -15,26 +16,29 @@ import kotlin.math.roundToInt
 
 typealias ColorMap = Map<String, Array<Float>>
 
+var resizeJob : Job? = null
 
 // In place of a suspending constructor
-suspend fun Log2(surface : HTMLCanvasElement, breadcrumbs : Element, currentGroup : Element,
+suspend fun Log2(surface : HTMLCanvasElement, breadcrumbs : Element, currentGroup : Element, overlay : HTMLCanvasElement,
                  rules : Rules, data : ActivityList, progressReporter : (Int) -> Unit) : Log2 {
   val renderer = Renderer(surface)
   yield()
-  val model = Log2(rules, data, progressReporter)
+  val model = Log2(rules, data, renderer, progressReporter)
   yield()
   val camembertView = CamembertView(model, renderer, rules.colors)
   yield()
   val breadcrumbView = BreadcrumbView(model, breadcrumbs, currentGroup, rules.colors)
   yield()
-  val legendView = LegendView(model, overlay)
+  val legendView = LegendView(model, overlay, el("currentGroup"))
   model.setDates(data.startDate, data.endDate)
 
   fun resize() {
-    mainScope.launchHandlingError {
+    resizeJob?.cancel()
+    resizeJob = mainScope.launchHandlingError {
       val (w, h) = resizeCanvas()
       renderer.sizeViewPort(w, h)
       camembertView.startAnimation(model.currentGroup)
+      legendView.drawText(model.currentGroup)
     }
   }
   el("activityList").observeResize { _,_ -> resize() }
@@ -139,7 +143,7 @@ class BreadcrumbView(private val model : Log2,
 }
 
 class Log2 internal constructor(
-  private val rules : Rules, private val data : ActivityList, private val progressReporter : (Int) -> Unit
+  private val rules : Rules, private val data : ActivityList, private val renderer : Renderer, private val progressReporter : (Int) -> Unit
 ) {
   val startDate : Timestamp
     get() = activities.startDate
@@ -186,6 +190,8 @@ class Log2 internal constructor(
     yield()
     groupStack.clear()
     currentGroup = gs.top
+    yield()
+    renderer.groupSet = gs
     yield()
   }
 }

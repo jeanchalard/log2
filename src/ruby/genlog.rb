@@ -174,6 +174,7 @@ FileUtils.mkdir_p(OUTDIR)
 RULES = arg("-r", true) || "rules/default.grc"
 SRC = arg('-s', true) || 'data*'
 DATA = Dir[SRC].map {|x| file(x) }.flatten
+raise "No input files" if DATA.empty?
 
 rules = readRules(RULES).gsub("\\", "\\\\\\").gsub("\"", "\\\"").gsub("\n", "\\n")
 data = readData(DATA).gsub("\\", "\\\\\\").gsub("\"", "\\\"").gsub("\n", "\\n")

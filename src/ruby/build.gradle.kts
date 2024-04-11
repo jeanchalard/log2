@@ -1,5 +1,5 @@
-val rules = "work"
-val data = "data/2023_09*"
+val rules = "calendar"
+val data = "data{,-2023}/*"
 
 val out = "${rootDir}/../out"
 

@@ -12,6 +12,8 @@ fun Collection<Long>.sum() = fold(0L) { acc, v -> acc + v }
 fun Collection<Float>.sum() = fold(0f) { acc, v -> acc + v }
 fun <T> Collection<T>.sumBy(summer : (T) -> Int) = fold(0) { acc, v -> acc + summer(v) }
 
+data class Point<T : Number>(val x : T, val y : T)
+
 // Minutes since 1970-01-01 00:00 in the local timezone.
 typealias Timestamp = Int
 typealias Minute = Int
@@ -42,3 +44,12 @@ operator fun Float.not() = toString().let {
 }
 
 fun Float.renderPercent() = "${toInt()}.${(10 * this).toInt() % 10}%"
+
+// Completely useless since it prints a minified JS stacktrace :(
+fun printStackTrace() {
+  try {
+    throw RuntimeException()
+  } catch (e : RuntimeException) {
+    e.printStackTrace()
+  }
+}

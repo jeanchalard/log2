@@ -23,6 +23,7 @@ class UncategorizedActivities(errors : List<UncategorizedActivity>) : Exception(
 }
 
 val surface get() = el("surface") as HTMLCanvasElement
+val overlay get() = el("overlay") as HTMLCanvasElement
 val startDateInput get() = el("startDate") as HTMLInputElement
 val endDateInput get() = el("endDate") as HTMLInputElement
 
@@ -55,10 +56,12 @@ suspend fun resizeCanvas() : Pair<Int, Int> {
   val remainingWidth = parent.clientWidth - activityList.offsetWidth
   surface.setAttribute("width", "${remainingWidth}px")
   surface.setAttribute("height", "${remainingHeight}px")
+  overlay.setAttribute("width", "${remainingWidth}px")
+  overlay.setAttribute("height", "${remainingHeight}px")
   val sizeStyle = "width : ${remainingWidth}px; height : ${remainingHeight}px;"
   (surface as Element).styleString = sizeStyle
+  (overlay as Element).styleString = sizeStyle
   el("camembert").styleString = sizeStyle
-  el("overlay").styleString = sizeStyle
   el("currentGroup").styleString = "width : ${remainingWidth}px;"
 
   return remainingWidth to remainingHeight
@@ -66,6 +69,8 @@ suspend fun resizeCanvas() : Pair<Int, Int> {
 
 suspend fun <T> handleError(block : suspend () -> T) = try {
   block()
+} catch (e : CancellationException) {
+  // Cancelled, do nothing
 } catch (e : Exception) {
   error(e)
 } catch (e : dynamic) { // Catch JS exceptions generated outside of kotlin code
@@ -98,7 +103,7 @@ fun main() {
     mainScope.launchHandlingError {
       val rules = parseRules(rules) { progressRules.style.width = "${it}%" }
       val activities = parseData(data) { progressData.style.width = "${it}%"}
-      log2 = Log2(surface, el("breadcrumbs"), el("currentGroup"), rules, activities) { progressGroup.style.width = "${it}%" }
+      log2 = Log2(surface, el("breadcrumbs"), el("currentGroup"), el("overlay") as HTMLCanvasElement, rules, activities) { progressGroup.style.width = "${it}%" }
       startDateInput.value = log2.startDate.toReadableString()
       endDateInput.value = log2.endDate.toReadableString()
       startDateInput.addOnInputListener { tryUpdateDate() }

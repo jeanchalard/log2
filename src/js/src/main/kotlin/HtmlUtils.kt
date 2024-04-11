@@ -36,6 +36,9 @@ value class Style(private val e : Element) {
 val Element.style : Style
   get() = Style(this)
 
+var Element.alpha : Float
+  get() = style["alpha"]?.toFloat() ?: 1.0f
+  set(a) { style["alpha"] = a.toString() }
 fun Element.addMouseMoveListener(handler : (MouseEvent) -> Unit) = addEventListener("mousemove", { handler(it as MouseEvent) })
 fun Element.addMouseClickListener(handler : (MouseEvent) -> Unit) = addEventListener("click", { handler(it as MouseEvent) })
 fun Element.addOnInputListener(handler : (Event) -> Unit) = addEventListener("input", { handler(it) })
