@@ -10,6 +10,7 @@
   color : white;
   margin : 0px;
   box-sizing : border-box;
+  position : relative; /* because per the HTML spec, having "absolute" anywhere above in the node tree voids the general contract that elements are placed inside their children and relative to them, unless somebody sets back position : relative somewhere -_-, so you need this applied to everything for positions to behave as expected */
   scrollbar-width : thin;
   font-family : "Noto Sans";
 }
@@ -33,7 +34,6 @@ ul {
 /* Take 1 screen height */
 html {
   background-color : black;
-  height 100vh;
 }
 body {
   height : 100%;
@@ -57,36 +57,72 @@ body {
   left : 50%;
   transform : translate(-50%, -50%);
 }
+/* Tools */
+.rows { display : flex; flex-direction : column; }
+.columns { display : flex; flex-direction : row; }
+.scrollHorizontal { overflow-x : scroll; }
+.weight1 { flex : 1 1 auto; }
+/* Visual elements */
+@keyframes pulse {
+  0%, 100% {
+    background-color: #bfbfbf;
+  }
+  50% {
+    background-color: var(--bg-color);
+  }
+}
+.pulse {
+  animation : pulse 1s infinite;
+  animation-timing-function : ease-in-out;
+}
+
+
+#tooltip {
+  display : none;
+  position : absolute;
+  text-align : center;
+  background-color : #1F1F1F;
+  z-index : 100;
+  border-radius : 4px;
+  padding : 3px 6px 3px 6px;
+  white-space : nowrap;
+  cursor : none;
+  opacity : 0.8;
+}
 
 #breadcrumbs {
   display : flex;
   align-items : center;
-  justify-content : left;
+  justify-content : start;
+  flex : 1 1 auto;
   flex-direction : row;
-  position : absolute;
   height : calc(5em - 2px);
-  top : 2.5em;
-  transform : translate(0, -50%);
   padding : 5px;
+  overflow-x : auto;
+  overflow-y : hidden;
 }
 .breadcrumb {
   display : flex;
+  flex-shrink : 0;
   height : calc(5em - 16px);
   align-items : center;
   text-align : center;
   padding : 10px;
   border : 1px solid white;
   border-radius : 10px;
+  margin-right : 10px;
+}
+.breadcrumb:last-child {
+  margin-right : 0;
 }
 .handCursor {
   cursor : pointer;
 }
 
 .dateInput {
-  position : absolute;
   height : 5em;
   top : 2.5em;
-  right : 0%;
+  right : 0;
   transform : translate(0, -50%);
   padding : 5px;
   border-left : 1px solid;
@@ -119,8 +155,8 @@ body {
 .toolBar {
   display : flex;
   flex-direction : row;
+  justify-content : end;
   box-shadow : inset 0px -1px #afafaf;
-  min-height : 5em;
   background : #101010;
 }
 
@@ -160,34 +196,70 @@ body {
 /* Content */
 #content {
   position : relative;
+}
+#timeUse {
   display : flex;
   flex-direction : row-reverse;
 }
-#activityList {
-  overflow : scroll;
+#rightPane {
+  display : flex;
+  flex-direction : column;
   min-width : 30%;
   max-width : 40%;
   background-color : #303030;
+  border-left : solid 2px #afafaf;
+  /* So that when measured, the width includes the border, which has the camembert be sized not to overlap it */
+  box-sizing : content-box;
+}
+#activityList {
+  flex-grow : 1;
+  overflow-y : scroll;
+  overflow-x : auto;
   padding : 5px;
   padding-left : 10px;
   padding-right : 10px;
-  border-left : solid 2px #afafaf;
 }
-#currentGroup {
-  height : 2.5em;
-  font-size : x-large;
-  font-weight : 800;
-  position : absolute;
-  bottom : 0px;
-  display : flex;
-  justify-content : center;
-  align-items : center;
-  background-color : rgb(30, 30, 30, 0.5);
+#sleepStats {
+  flex-grow : 0;
+  padding : 5px;
+  padding-left : 10px;
+  padding-right : 10px;
+  border-top : solid 2px #afafaf;
 }
 canvas {
   position : absolute;
   top : 0px;
   left : 0px;
+}
+#camembert {
+  display : flex;
+  flex-direction : column-reverse;
+}
+#currentGroup {
+  height : 2.5em;
+  width : 100%;
+  font-size : x-large;
+  font-weight : 800;
+  display : flex;
+  justify-content : center;
+  align-items : center;
+  background-color : rgb(30, 30, 30, 0.5);
+}
+#pitch {
+  /* position */
+  writing-mode : vertical-lr;
+  direction : rtl;
+  flex-grow : 1;
+  align-self : end;
+  justify-content : right;
+  width : 2em;
+  margin-top : 1em;
+  margin-bottom : 1em;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width : 2em;
+  background-color : #ff0000;
 }
 
 .timeRender {
@@ -222,4 +294,66 @@ li.active {
   border-width : 1.5px;
   border-style : solid;
   border-color : #fcfcfc;
+}
+
+/* Calendar */
+#calendar, #calendarData {
+  display : flex;
+  flex : 1 1 auto;
+}
+#calendarHourLines {
+  display : flex;
+  flex : 1 1 auto;
+  pointer-events : none;
+}
+#calendarGrid {
+  display : flex;
+  flex : 1 1 auto;
+  min-width : 100%;
+  width : max-content;
+}
+#calendarArea {
+  width : 100%;
+}
+#calendarHourLegend {
+  height : 100%;
+  flex : 0 1 auto;
+  margin-left : 0.2cm; margin-right : 0.2cm;
+}
+.hourLegend {
+  flex : 1 1 auto;
+  text-align : center;
+  border-bottom : 1px;
+}
+.holiday { color : #FFAFAF; }
+.weekday { color : white; }
+#calendarScroller {
+  flex : 1 1 auto;
+}
+.gridHourSolid {
+  flex: 1 1 auto;
+  border-bottom : 1px solid rgba(255, 255, 255, 0.5);
+}
+.gridHourDashed {
+  flex: 1 1 auto;
+  border-bottom : 1px dashed rgba(255, 255, 255, 0.5);
+}
+.gridHourLast {
+  flex : 1 1 auto;
+  border-bottom : 0px dashed rgba(255, 255, 255, 0.5);
+}
+.gridHourSelected {
+  border-bottom : 1px solid rgba(255, 255, 255, 1.0);
+}
+.separatorLeft {
+  border-left : 1px solid rgba(255, 255, 255, 0.3);
+}
+.day {
+  text-align : center;
+  min-width : var(--min-day-width);
+  flex : 1 1 auto;
+}
+.activity {
+  opacity : 0.75;
+  outline-offset : -1px;
 }
