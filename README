@@ -1,0 +1,107 @@
+This is a tool that reads a log minute-by-minute of a day
+and a set of rules on how to interpret it, and will create
+a monolithic HTML page showing graphs and reports of it
+together with query tools.
+
+The format of the files are exactly the same as for the
+older log1 tool. On my system that project is checked out
+on a directory next to this one and I'm still managing
+the files in there, hence the symlinks. Either point them
+to where you manage the files or make them into a real
+directory and manage them here.
+
+See the README in that project for a description of the
+formats. The differences should be inconsequential.
+They are listed below :
+• this tool ignores the "mode" line in the general
+section : it supports only one mode (outputting HTML and
+javascript files) and will always use that mode. PNG
+output had been deprecated for a long time anyway for
+its lack of interactivity.
+• the [counters] and [markers] section are not implemented
+at this time.
+• colors must be colors supported by CSS, not formats
+supported by ImageMagick ; these are almost the same
+anyway.
+• holidays support is not implemented at this time,
+though at this point it is considered an urgent task.
+
+The technology is completely different ; this is
+Kotlin/JS and it creates one HTML file with a lot of
+Kotlin compiled to Javascript, where the old script was
+Ruby generating PNG images (originally) then HTML with
+Javascript in the template.
+The old technology had become unwieldly : the Ruby script
+evolved to a much bigger scope than originally thought and
+became pretty hard to manage given that at no point was it
+necessary to enforce good typing or code separation
+practice ; the HTML/CSS template also has become really
+complex and Javascript is a crappy language to write code
+in. This meant dynamic querying was really hard to achieve,
+seeing how it would call for a huge refactor especially of
+the HTML and Javascript.
+A rewrite in Kotlin solves all of this in one fell swoop,
+both by providing a much better language than Javascript,
+good static typing, and the rewrite opportunity to create
+an architecture that is actually appropriate for the size
+of the tool.
+
+Unfortunately there still is some preprocessing involved,
+because someone decided that reading file:// files from
+a file:// html was a security risk, unless it's Javascript,
+in which case it's obviously fine 🤪
+I'm not going to manually write something like
+`const data = """` at the top and `""";` at the bottom of
+my data files and call them `.js`, since that would make
+them pretty annoying to write. So there is a preprocessing
+step to convert, written in Ruby. I do not think that today
+there is any way to solve this aside from making your data
+files valid javascript, having some preprocessing step, or
+demanding to run in a web server (hey if you think that's
+what I should do anyway genius, how do you propose I send a
+zip to someone to view on their phone ? I'm not going to
+pay for a public server to host this.)
+Maybe someday the browsers can get their security story
+straight and this step can be removed. For the time being,
+though pretty aggravating this is, the Ruby script has to
+be run every time the data is changed, and the gradle build
+file for the Ruby step contains the list of files to
+process (in particular because at the end of the day,
+parsing thousands of line in Javascript takes a fair amount
+of time, so inputting 5 years of data into the page will
+still take many seconds to parse on my computer). This
+step can be executed easily in an IDE, or on the command
+line from the src directory :
+./gradlew make
+...
+
+Well seeing how this preprocessing step can't be removed
+anyway (or at any rate, how alternatives are even worse),
+the preprocessing will not just put the minimal header
+and footer to make the data files valid Javascript. Maybe
+this is what I should have done but Ruby is still much
+better and faster than either Javascript or Kotlin to
+manipulate strings so the Ruby script will take the source
+data files and output one single data source, a valid
+Javascript file with a single string, unifying timestamps
+and putting one activity a line :
+"YYYY-MM-DD:HHmm:YYYY-MM-DD:HHmm <activity>\n". 
+That means it doesn't do a lot of work really, but one of
+the things it does is the essential task of determining
+when a task ends. Normally this is on the next line of
+the data file, but things are more complex at the end/start
+of a day and at the end/start of a data file. The Ruby
+script contains this intelligence.
+It also will exception out if one of the data files is not
+well ordered.
+All of this should maybe be rewritten in Kotlin some day,
+or at least it will have to if the preprocessing is to be
+removed but the security story of file:// has to be fixed
+first and I don't control that.
+
+The preprocessing however does not try to match activities
+and classify them (in particular, this has to be redone
+when dynamic queries change, so it has to be done in
+Kotlin/JS anyway). It just outputs the raw data in an
+easier to digest and ""security""-compliant way.
+
