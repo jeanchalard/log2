@@ -3,7 +3,7 @@ import org.khronos.webgl.WebGLProgram
 import org.w3c.dom.HTMLCanvasElement
 import kotlin.math.PI
 import kotlin.math.abs
-import org.khronos.webgl.WebGLRenderingContext as GL
+import org.khronos.webgl.WebGL2RenderingContext as GL
 
 const val RADIUS = 0.35f
 const val TAU = (PI * 2).toFloat()
@@ -16,7 +16,7 @@ const val vertexShader = """
   }
 """
 class Renderer(surface : HTMLCanvasElement) {
-  private val gl = surface.getContext("webgl") as GL
+  private val gl = surface.getContext("webgl2") as GL
   // No idea what the hell is at work here, this looks like yet another web bizarre bug^H^H^Hfeature. Why can't I
   // create a uniform of uniformSize when it's reputed to be the max size ? Why can't I do it for half, but it's
   // fine with / 2 - 1 ?
