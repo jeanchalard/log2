@@ -51,6 +51,7 @@ def readRules(rules)
   mode = nil
   dir = File.dirname(rules)
   File.readlines(rules).each do |l|
+    l += "\n" if l[-1] != "\n"
     case l
     when /^\s*#/, /^$/ then # nothing, it's a comment or an empty line
     when /^\[collapse(\/i)?\]$/i
@@ -106,7 +107,7 @@ def readData(data)
           result << "#{prevDate}:#{d} #{prevAct}"
         end
         prevDate = d
-      elsif l.match(/^(\d\d\d\d) (.*)/)
+      elsif l.match(/^(\d\d\d\d) (.+)/)
         time = $1
         act = $2
         d = "#{date}:#{time}"
@@ -114,9 +115,15 @@ def readData(data)
         result << "#{prevDate}:#{d} #{prevAct}" unless prevAct.nil?
         prevAct = act
         prevDate = d
-      elsif l.match(/^\d\d\d\d\s*$/)
-        # Nothing – this is an end time written temporarily in a file to remember when something ended, but
+      elsif l.match(/^(\d\d\d\d)\s*$/)
+        # This is an end time written temporarily in a file to remember when something ended, but
         # the next activity isn't known yet.
+        time = $1
+        d = "#{date}:#{time}"
+        raise "Not ordered #{prevDate} <> #{d}" if (prevDate >= d)
+        result << "#{prevDate}:#{d} #{prevAct}" unless prevAct.nil?
+        prevAct = nil
+        prevDate = d
       else
         raise "Unable to parse data : #{l}"
       end
@@ -124,8 +131,7 @@ def readData(data)
     result << "#{prevDate}:#{date}:#{RESET_TIME} #{prevAct}"
   end
   data = collapseIdentical(result.sort)
-  data[0].sub!(RESET_TIME, '0000')
-  data[-1].sub!(RESET_TIME, '2400')
+  data = data[1..-2]
   data.join("\n")
 end
 
