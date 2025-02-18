@@ -8,7 +8,7 @@ import org.w3c.dom.events.MouseEvent
  * Kotlin/JS is pitifully underfurnished for any real HTML work :(
  */
 
-fun el(s : String) = document.getElementById(s) ?: throw HTMLElementNotFound("Can't find element with id ${s}")
+fun el(s : String) = (document.getElementById(s) ?: throw HTMLElementNotFound("Can't find element with id ${s}")) as HTMLElement
 fun elOrNull(s : String) = document.getElementById(s)
 val Element.first get() = firstElementChild as HTMLElement
 var Element.styleString : String?
@@ -33,12 +33,14 @@ value class Style(private val e : Element) {
     e.styleString = l.joinToString(";") { "${it.first}:${it.second}" } + ";"
   }
 }
-val Element.style : Style
+val Element.styles : Style
   get() = Style(this)
 
 var Element.alpha : Float
-  get() = style["alpha"]?.toFloat() ?: 1.0f
-  set(a) { style["alpha"] = a.toString() }
+  get() = styles["alpha"]?.toFloat() ?: 1.0f
+  set(a) { styles["alpha"] = a.toString() }
+fun Element.addMouseOverListener(handler : (MouseEvent) -> Unit) = addEventListener("mouseover", { handler(it as MouseEvent) })
+fun Element.addMouseOutListener(handler : (MouseEvent) -> Unit) = addEventListener("mouseout", { handler(it as MouseEvent) })
 fun Element.addMouseMoveListener(handler : (MouseEvent) -> Unit) = addEventListener("mousemove", { handler(it as MouseEvent) })
 fun Element.addMouseClickListener(handler : (MouseEvent) -> Unit) = addEventListener("click", { handler(it as MouseEvent) })
 fun Element.addOnInputListener(handler : (Event) -> Unit) = addEventListener("input", { handler(it) })

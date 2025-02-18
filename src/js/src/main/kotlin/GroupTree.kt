@@ -67,7 +67,7 @@ class GroupTree(private val model : Log2, private val anchor : Element, private 
         +"${percent}${realDuration.renderDuration()}"
     }
     val color = colors[group.canon.name] ?: arrayOf(1f, 1f, 1f)
-    (header as Element).style["color"] = "rgb(${color.map{it*255}.joinToString(",")})"
+    header.styles["color"] = "rgb(${color.map{it*255}.joinToString(",")})"
 
     val children = if (leaf) null else ul {
       if (group.activities.isNotEmpty()) {
@@ -100,7 +100,7 @@ class GroupTree(private val model : Log2, private val anchor : Element, private 
         header.parentElement!!.addClass("open")
       } else {
         header.parentElement!!.addClass("closed")
-        (children as Element).style["display"] = "none"
+        children?.run { styles["display"] = "none" }
       }
     }
   }
@@ -111,12 +111,12 @@ class GroupTree(private val model : Log2, private val anchor : Element, private 
   private fun close(el : Element) {
     el.removeClass("open")
     el.addClass("closed")
-    el.getElementsByTagName("ul").item(0)?.run { style["display"] = "none" }
+    el.getElementsByTagName("ul").item(0)?.run { styles["display"] = "none" }
   }
 
   private fun open(el : Element) {
     el.removeClass("closed")
     el.addClass("open")
-    el.getElementsByTagName("ul").item(0)?.run { style["display"] = null }
+    el.getElementsByTagName("ul").item(0)?.run { styles["display"] = null }
   }
 }
