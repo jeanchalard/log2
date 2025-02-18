@@ -11,4 +11,8 @@ data class Rules(val name : String, val rules : List<Assoc>, val colors : Map<St
   }
 
   fun categorize(s : String) : Assoc? = rules.find { it.regexp.matches(s) }
+
+  companion object {
+    val EMPTY = Rules("EMPTY", emptyList(), emptyMap())
+  }
 }

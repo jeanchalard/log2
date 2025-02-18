@@ -4,7 +4,7 @@ val IDENTITY = arrayOf(1f, 0f, 0f, 0f,     0f, 1f, 0f, 0f,    0f, 0f, 1f, 0f,   
 
 fun perspective(FoV : Float, aspect : Float, nearDistance : Float, farDistance : Float) : Array<Float> {
   val f = 1f / tan(FoV / 2)
-  val nf = 1f / (nearDistance - farDistance);
+  val nf = 1f / (nearDistance - farDistance)
   return arrayOf(
     f / aspect, 0f,                                0f,  0f,
     0f,          f,                                0f,  0f,

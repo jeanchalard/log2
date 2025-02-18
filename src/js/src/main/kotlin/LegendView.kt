@@ -18,7 +18,7 @@ private inline fun CanvasRenderingContext2D.fix() {
   lineWidth = 3.0
 }
 
-class LegendView(private val model : Log2, private val surface : HTMLCanvasElement, private val bottomLegend : Element) {
+class LegendView(model : Log2, private val surface : HTMLCanvasElement, private val bottomLegend : Element) {
   private val surfaceContext = surface.getContext("2d") as CanvasRenderingContext2D
   init {
     labelGeneration += 1
@@ -157,9 +157,9 @@ class LegendView(private val model : Log2, private val surface : HTMLCanvasEleme
         surfaceContext.renderText(it)
       }
       var moved = false
-      labels.forEachIndexed { i, it ->
-        if (abs(it.x - positions[i].x) > 0.1) moved = true
-        if (abs(it.y - positions[i].y) > 0.1) moved = true
+      labels.forEachIndexed { j, it ->
+        if (abs(it.x - positions[j].x) > 0.1) moved = true
+        if (abs(it.y - positions[j].y) > 0.1) moved = true
         if (moved) return@forEachIndexed
       }
       if (!moved) return
