@@ -14,8 +14,6 @@ import kotlin.math.atan
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-typealias ColorMap = Map<String, Array<Float>>
-
 var resizeJob : Job? = null
 
 // In place of a suspending constructor
@@ -29,7 +27,8 @@ suspend fun Log2(surface : HTMLCanvasElement, overlay : HTMLCanvasElement,
   // for Log2 anyway.
   model.setDates(data.startDate, data.endDate)
   yield()
-  val camembertView = CamembertView(model, renderer, rules.colors)
+  // Views for the 'time use' tab
+  val camembertView = CamembertView(model, renderer)
   yield()
   val legendView = LegendView(model, overlay, el("currentGroup"))
 
@@ -38,7 +37,7 @@ suspend fun Log2(surface : HTMLCanvasElement, overlay : HTMLCanvasElement,
     resizeJob = mainScope.launchHandlingError {
       val (w, h) = resizeCanvas()
       renderer.sizeViewPort(w, h)
-      camembertView.startAnimation(model.currentGroup)
+      camembertView.startAnimation()
       legendView.drawText(model.currentGroup)
     }
   }
@@ -48,19 +47,18 @@ suspend fun Log2(surface : HTMLCanvasElement, overlay : HTMLCanvasElement,
   return model
 }
 
-class CamembertView(val model : Log2, private val renderer : Renderer, private val colorMap : ColorMap) {
+@Suppress("UNUSED_ANONYMOUS_PARAMETER")
+class CamembertView(private val model : Log2, private val renderer : Renderer) {
   init {
     model.currentGroupProp.listen { old, new ->
-      startAnimation(new)
+      startAnimation()
     }
     registerMouseListeners()
   }
 
   private var hoveredGroup : Group? = null
 
-  private var destGroup : Group = model.currentGroup
-  fun startAnimation(g : Group) {
-    destGroup = g
+  fun startAnimation() {
     renderer.changeCurrentGroup(model.stack)
     @Suppress("UNUSED_PARAMETER") // It's a callback dude
     fun step(timestamp : Double) {
@@ -110,7 +108,6 @@ class CamembertView(val model : Log2, private val renderer : Renderer, private v
       }
     }
   }
-
 }
 
 class BreadcrumbView(private val model : Log2,
