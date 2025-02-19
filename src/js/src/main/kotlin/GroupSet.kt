@@ -58,7 +58,7 @@ suspend fun GroupSet(rules : Rules, activities : ActivityList, progressReporter 
   val uncategorizedActivities = mutableListOf<UncategorizedActivity>()
   val total = activities.size.ifZeroThen(1)
   var currentLine = 0
-  activities.forEach { act ->
+  activities.forEachSuspending { act ->
     currentLine += 1
     groupSet.categorize(act)?.let { uncategorizedActivities.add(it) }
     progressReporter((100 * currentLine) / total)
