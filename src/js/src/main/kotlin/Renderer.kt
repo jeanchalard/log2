@@ -100,8 +100,6 @@ class Renderer(surface : HTMLCanvasElement) {
   private val endColors = Array(uniformSize * 3) { 0f }
   private val endPercentiles = Array(uniformSize) { 0f }
 
-  lateinit var groupSet : GroupSet
-
   init {
     setupSurface()
     shader = setupShaders()

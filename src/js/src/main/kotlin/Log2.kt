@@ -24,11 +24,14 @@ suspend fun Log2(surface : HTMLCanvasElement, overlay : HTMLCanvasElement,
   val renderer = Renderer(surface)
   yield()
   val model = Log2(rules, data, renderer, progressReporter)
+  // setDates must be called immediately to initialize lateinit properties. Ideally this would be done in the
+  // constructor for Log2 but setDates is suspend so it has to be done here. This function is the public constructor
+  // for Log2 anyway.
+  model.setDates(data.startDate, data.endDate)
   yield()
   val camembertView = CamembertView(model, renderer, rules.colors)
   yield()
   val legendView = LegendView(model, overlay, el("currentGroup"))
-  model.setDates(data.startDate, data.endDate)
 
   fun resize() {
     resizeJob?.cancel()
@@ -101,7 +104,6 @@ class CamembertView(val model : Log2, private val renderer : Renderer, private v
       if (null == target)
         model.popStack()
       else {
-        console.log(""+hoveredGroup?.canon?.name)
         model.currentGroup = target
         mouseMoveListener(it)
       }
@@ -133,7 +135,7 @@ class BreadcrumbView(private val model : Log2,
       style = "background-color : rgb(${color.map{it*255}.joinToString(",")})"
       +group.canon.name
       br {}
-      +"${group.totalMinutes.renderDuration()} (${(1440f * group.totalMinutes / (model.endDate - model.startDate)).roundToInt().renderDuration()}/d)"
+      +"${group.totalMinutes.renderDuration()} (${(1440f * group.totalMinutes / (model.endDate - model.startDate)).ifNaNThen(0f).roundToInt().renderDuration()}/d)"
     }.addMouseClickListener {
       model.currentGroup = group
     }
@@ -161,7 +163,13 @@ class Log2 internal constructor(
       field = g
     }
   val currentGroupProp = Listenable(this::currentGroup)
-  val stack : Iterable<Group> = groupStack
+  var stack : List<Group>
+    get() = groupStack
+    set(g) {
+      groupStack.clear()
+      groupStack.addAll(g)
+      currentGroup = groupStack.last()
+    }
   fun popStack() {
     if (groupStack.size <= 1) return
     groupStack.removeLast()
@@ -199,9 +207,14 @@ class Log2 internal constructor(
     currentGroup = gs.top
     groupSet = gs
     yield()
-    renderer.groupSet = gs
-    yield()
   }
 
   suspend fun setPitch(pitch : Float) = renderer.setPitch(pitch)
+
+  val size : Int get() = activities.size
+  val first : Activity get() = activities.first
+  val last : Activity get() = activities.last
+  fun forEachActivity(f : (Activity) -> Unit) {
+    activities.forEach(f)
+  }
 }
