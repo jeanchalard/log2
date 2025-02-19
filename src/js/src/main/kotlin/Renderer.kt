@@ -93,6 +93,7 @@ class Renderer(surface : HTMLCanvasElement) {
 
   // Identify if the group has changed (different set) or not (e.g. window resize) to see if animation should start
   private var lastGroup = Group.TOP
+  private var group = Group.TOP
   // The current animation values, to avoid allocating every time
   private val currentColors = Array(uniformSize * 3) { 0f }
   private val currentPercentiles = Array(uniformSize) { 0f }
@@ -105,6 +106,10 @@ class Renderer(surface : HTMLCanvasElement) {
     shader = setupShaders()
     setupScene()
     sizeViewPort(surface.clientWidth, surface.clientHeight)
+  }
+
+  fun changeCurrentGroup(srcStack : List<Group>) {
+    group = srcStack.last()
   }
 
   private inline fun <reified T> Array<T>.fill(src : List<T>, default : T) = indices.forEach { i -> this[i] = if (i >= src.size) default else src[i] }
@@ -122,7 +127,7 @@ class Renderer(surface : HTMLCanvasElement) {
   // To avoid re-allocating for each render
   private val percentiles = mutableListOf<Float>()
   private val colorVals = mutableListOf<Float>()
-  fun render(group : Group, colors : Map<String, Array<Float>>) : Boolean {
+  fun render() : Boolean {
     if (group !== lastGroup) {
       lastGroup = group
       percentiles.clear()
@@ -130,7 +135,7 @@ class Renderer(surface : HTMLCanvasElement) {
       percentiles.add(0f)
       group.children.forEach { child ->
         percentiles.add(percentiles.last() + child.totalMinutes.toFloat() / group.totalMinutes)
-        val c = colors[child.canon.name] ?: arrayOf(1f, 1f, 1f)
+        val c = child.color
         c.forEach { colorVals.add(it) }
       }
       percentiles.drop(1)

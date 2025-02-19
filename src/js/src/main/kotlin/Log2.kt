@@ -61,9 +61,10 @@ class CamembertView(val model : Log2, private val renderer : Renderer, private v
   private var destGroup : Group = model.currentGroup
   fun startAnimation(g : Group) {
     destGroup = g
+    renderer.changeCurrentGroup(model.stack)
     @Suppress("UNUSED_PARAMETER") // It's a callback dude
     fun step(timestamp : Double) {
-      if (!renderer.render(destGroup, colorMap)) {
+      if (!renderer.render()) {
         window.requestAnimationFrame { step(it) }
       }
     }
