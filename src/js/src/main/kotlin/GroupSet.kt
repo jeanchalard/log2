@@ -124,4 +124,8 @@ class GroupSet(private val rules : Rules) {
     fun List<WeightedCategory>.contains(c : Category) = any { it.category == c }
     return groups.values.filter { it.canon.parents.contains(cat) }
   }
+
+  companion object {
+    val EMPTY = GroupSet(Rules.EMPTY)
+  }
 }

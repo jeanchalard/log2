@@ -170,8 +170,15 @@ class Log2 internal constructor(
     currentGroup = groupStack.last()
   }
 
+  var groupSet : GroupSet = GroupSet.EMPTY
+    set(gs) {
+      if (gs === field) return
+      groupSetProp.changed(field, gs)
+      field = gs
+    }
+  val groupSetProp = Listenable(this::groupSet)
+
   private lateinit var activities : ActivityList
-  private lateinit var groupSet : GroupSet
   private var tree : GroupTree? = null
   suspend fun setDates(from : Timestamp, end : Timestamp) {
     val acts = data.view(from, end)
@@ -182,7 +189,6 @@ class Log2 internal constructor(
     yield()
     run<Unit> {
       activities = acts
-      groupSet = gs
       val oldTree = tree
       tree = tr
       oldTree?.delete()
@@ -190,6 +196,7 @@ class Log2 internal constructor(
     yield()
     groupStack.clear()
     currentGroup = gs.top
+    groupSet = gs
     yield()
     renderer.groupSet = gs
     yield()
