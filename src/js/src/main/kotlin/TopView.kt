@@ -52,8 +52,8 @@ class CalendarTab(model : Log2, topView : TopView, tabElement : Element) : Tab(m
 
 
 
-class TopView(model : Log2, private val main : Element, colorMap : ColorMap) {
-  private val breadcrumbView : BreadcrumbView = BreadcrumbView(model, el("breadcrumbs"), el("currentGroup"), colorMap)
+class TopView(model : Log2, private val main : Element) {
+  private val breadcrumbView : BreadcrumbView = BreadcrumbView(model, el("breadcrumbs"), el("currentGroup"))
   private val tabs : List<Tab>
 
   init {

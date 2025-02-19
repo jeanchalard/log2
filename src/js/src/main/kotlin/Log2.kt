@@ -19,15 +19,13 @@ typealias ColorMap = Map<String, Array<Float>>
 var resizeJob : Job? = null
 
 // In place of a suspending constructor
-suspend fun Log2(surface : HTMLCanvasElement, breadcrumbs : Element, currentGroup : Element, overlay : HTMLCanvasElement,
+suspend fun Log2(surface : HTMLCanvasElement, overlay : HTMLCanvasElement,
                  rules : Rules, data : ActivityList, progressReporter : (Int) -> Unit) : Log2 {
   val renderer = Renderer(surface)
   yield()
   val model = Log2(rules, data, renderer, progressReporter)
   yield()
   val camembertView = CamembertView(model, renderer, rules.colors)
-  yield()
-  val breadcrumbView = BreadcrumbView(model, breadcrumbs, currentGroup, rules.colors)
   yield()
   val legendView = LegendView(model, overlay, el("currentGroup"))
   model.setDates(data.startDate, data.endDate)
@@ -113,7 +111,7 @@ class CamembertView(val model : Log2, private val renderer : Renderer, private v
 }
 
 class BreadcrumbView(private val model : Log2,
-                     private val breadcrumbs : Element, private val currentGroupHtml : Element, private val colorMap : ColorMap) {
+                     private val breadcrumbs : Element, private val currentGroupHtml : Element) {
   init {
     model.currentGroupProp.listen { _, _ -> render() }
   }
@@ -131,7 +129,7 @@ class BreadcrumbView(private val model : Log2,
 
   private fun TagConsumer<HTMLElement>.breadcrumb(group : Group) {
     div(classes = "breadcrumb handCursor") {
-      val color = colorMap[group.canon.name] ?: arrayOf(1f, 1f, 1f)
+      val color = group.color
       style = "background-color : rgb(${color.map{it*255}.joinToString(",")})"
       +group.canon.name
       br {}
@@ -187,6 +185,9 @@ class Log2 internal constructor(
     yield()
     val tr = GroupTree(this, el("activityList"), gs.top, rules.colors)
     yield()
+    val sleepStats = acts.sleepStats
+    el("sleepStats").innerHTML = "Zzz duration avg = ${sleepStats.duration.average.renderDuration()} σ = ${sleepStats.duration.deviation.renderDuration()}<br>Zzz time avg = ${sleepStats.time.average.renderDuration()} σ = ${sleepStats.time.deviation.renderDuration()}"
+    yield()
     run<Unit> {
       activities = acts
       val oldTree = tree
@@ -201,4 +202,6 @@ class Log2 internal constructor(
     renderer.groupSet = gs
     yield()
   }
+
+  suspend fun setPitch(pitch : Float) = renderer.setPitch(pitch)
 }

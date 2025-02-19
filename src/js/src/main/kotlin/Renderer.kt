@@ -193,4 +193,7 @@ class Renderer(surface : HTMLCanvasElement) {
     val translationMat = translation(0f, 0f, -0.002f)
     gl.uniformMatrix4fv(shader["modelMat"], transpose = false, translationMat)
   }
+
+  fun setPitch(pitch : Float) {
+  }
 }
