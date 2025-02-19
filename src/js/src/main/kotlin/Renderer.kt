@@ -92,7 +92,7 @@ class Renderer(surface : HTMLCanvasElement) {
   private val shader : WebGLProgram
 
   // Identify if the group has changed (different set) or not (e.g. window resize) to see if animation should start
-  private var lastGroup = Group(Category("none", emptyList()))
+  private var lastGroup = Group.TOP
   // The current animation values, to avoid allocating every time
   private val currentColors = Array(uniformSize * 3) { 0f }
   private val currentPercentiles = Array(uniformSize) { 0f }

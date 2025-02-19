@@ -151,7 +151,7 @@ class Log2 internal constructor(
     get() = activities.endDate
 
   private val groupStack = ArrayDeque<Group>()
-  var currentGroup : Group = Group(Category.TOP)
+  var currentGroup : Group = Group.TOP
     set(g) {
       if (g === field) return
       if (groupStack.contains(g)) {
