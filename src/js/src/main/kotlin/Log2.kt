@@ -117,6 +117,7 @@ class BreadcrumbView(private val model : Log2,
                      private val breadcrumbs : Element, private val currentGroupHtml : Element) {
   init {
     model.currentGroupProp.listen { _, _ -> render() }
+    render()
   }
 
   private fun render() {
