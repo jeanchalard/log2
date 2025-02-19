@@ -10,8 +10,11 @@
   </div>
 </div>
 <div id="main" class="hidden matchParent">
+  <div id="tooltip"></div>
+
   <div id="toolBar" class="toolBar">
     <div id="breadcrumbs"></div>
+    <div>
       <table class="dateInput">
         <tr>
           <td>From</td><td><input type="text" name="startDate" id="startDate" /></td>
@@ -20,20 +23,43 @@
         </tr>
       </table>
     </div>
+  </div>
 
-    <div id="content">
-      <div id="activityList"></div>
+  <div id="content">
+    <div id="timeUse">
+      <div id="rightPane">
+        <div id="activityList"></div>
+        <div id="sleepStats">Z̅</div>
+      </div>
       <div id="camembert">
         <canvas id="surface"></canvas>
         <canvas id="overlay"></canvas>
         <div id="currentGroup">Yay</div>
+        <input id="pitch" type="range" orient="vertical" />
       </div>
     </div>
 
-    <div id="tabBar" class="tabBar">
-      <div class="activeTab">Time use</div>
-      <div class="inactiveTab">Calendar</div>
+    <div id="calendar" class="matchParent">
+      <div id="calendarArea" class="columns weight1">
+        <div id="calendarHourLegend" class="rows">
+          <!-- Take the same space as the read dayLegend on the right -->
+          <div class="dayLegend scrollHorizontal" style="visibility : hidden;"><center class="day">00<br/>月</center></div>
+        </div>
+        <div id="calendarScroller" class="rows weight1 scrollHorizontal">
+          <div id="calendarGrid">
+            <div id="calendarData"></div>
+            <div id="calendarHourLines" class="rows matchParent"></div>
+          </div>
+          <div id="calendarDayLegend" class="columns"></div>
+        </div>
+      </div>
+      <div id="calendarFooter"></div>
     </div>
+  </div>
+
+  <div id="tabBar" class="tabBar">
+    <div class="inactiveTab" data-target="timeUse">Time use</div>
+    <div class="activeTab" data-target="calendar">Calendar</div>
   </div>
 </div>
 <script src="data.js"></script>
