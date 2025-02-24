@@ -26,7 +26,7 @@ class Renderer(surface : HTMLCanvasElement) {
 
   uniform vec3 colors[${uniformSize}];
   uniform float percentiles[${uniformSize}];
-  
+
   const float TAU = 6.28318;
   const float RADIUS = ${RADIUS};
   float LINE_THICKNESS;
