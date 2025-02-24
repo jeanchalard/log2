@@ -190,7 +190,7 @@ class Log2 internal constructor(
     yield()
     val gs = GroupSet(rules, acts, progressReporter)
     yield()
-    val tr = GroupTree(this, el("activityList"), gs.top, rules.colors)
+    val tr = GroupTree(this, el("activityList"), gs.top)
     yield()
     val sleepStats = acts.sleepStats
     el("sleepStats").innerHTML = "Zzz duration avg = ${sleepStats.duration.average.renderDuration()} σ = ${sleepStats.duration.deviation.renderDuration()}<br>Zzz time avg = ${sleepStats.time.average.renderDuration()} σ = ${sleepStats.time.deviation.renderDuration()}"

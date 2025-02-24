@@ -10,7 +10,7 @@ import kotlinx.html.js.ul
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 
-class GroupTree(private val model : Log2, private val anchor : Element, private val top : Group, private val colors : Map<String, Array<Float>>) {
+class GroupTree(private val model : Log2, private val anchor : Element, private val top : Group) {
   companion object {
     private val uniqueId = atomic(1)
     private fun nextId() = "tree${uniqueId.getAndIncrement()}"
@@ -66,7 +66,7 @@ class GroupTree(private val model : Log2, private val anchor : Element, private 
       else
         +"${percent}${realDuration.renderDuration()}"
     }
-    val color = colors[group.canon.name] ?: arrayOf(1f, 1f, 1f)
+    val color = group.color
     header.styles["color"] = "rgb(${color.map{it*255}.joinToString(",")})"
 
     val children = if (leaf) null else ul {
