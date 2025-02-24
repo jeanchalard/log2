@@ -7,7 +7,6 @@
 
 /* Sanity */
 * {
-  color : white;
   margin : 0px;
   box-sizing : border-box;
   position : relative; /* because per the HTML spec, having "absolute" anywhere above in the node tree voids the general contract that elements are placed inside their children and relative to them, unless somebody sets back position : relative somewhere -_-, so you need this applied to everything for positions to behave as expected */
@@ -31,8 +30,8 @@ ul {
   src : local("Noto Sans CJK JP Medium");
 }
 
-/* Take 1 screen height */
 html {
+  color : white;
   background-color : black;
 }
 body {
