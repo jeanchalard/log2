@@ -277,15 +277,15 @@ input[type=range]::-webkit-slider-thumb {
 ul.branch {
   list-style : none;
 }
-li.leaf:before {
+div.leaf:before {
   padding-right : 0.5em;
   content : "\2BC0";
 }
-li.open:before {
+div.open:before {
   padding-right : 0.5em;
   content : "\2BC6";
 }
-li.closed:before {
+div.closed:before {
   padding-right : 0.5em;
   content : "\2BC8";
 }

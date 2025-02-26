@@ -4,6 +4,7 @@ import kotlinx.dom.hasClass
 import kotlinx.dom.removeClass
 import kotlinx.html.TagConsumer
 import kotlinx.html.dom.append
+import kotlinx.html.js.div
 import kotlinx.html.js.li
 import kotlinx.html.js.span
 import kotlinx.html.js.ul
@@ -33,16 +34,18 @@ class GroupTree(private val model : Log2, private val anchor : Element, private 
     val oldEl = elOrNull(oldGroup.id)
     if (null != oldEl) {
       inactive(oldEl)
-      if (!oldEl.ancestorOf(newEl))
+      if (!oldEl.getElementToOpen().ancestorOf(newEl?.getElementToOpen()))
         close(oldEl)
     }
   }
 
-  private fun Element.ancestorOf(descendant : Element?) : Boolean = when (descendant) {
-    null -> false
-    this -> true
-    else -> ancestorOf(descendant.parentElement)
-  }
+  private fun Element?.ancestorOf(descendant : Element?) : Boolean =
+    if (null == this) false
+    else when (descendant) {
+      null -> false
+      this -> true
+      else -> ancestorOf(descendant.parentElement)
+    }
 
   private fun render() {
     anchor.innerHTML = ""
@@ -54,31 +57,37 @@ class GroupTree(private val model : Log2, private val anchor : Element, private 
 
   private fun TagConsumer<HTMLElement>.render(group : Group, parent : Group?, id : String, depth : Int) {
     val leaf = group.children.isEmpty()
-    val header = span(classes = if (leaf) "" else "handCursor") { +group.canon.name }
-    if ("" == header.parentElement!!.id) header.parentElement!!.id = group.id
-    val parentTime = parent?.totalMinutes
-    span(classes = "timeRender") {
-      val parentWeight = group.parentWeight(parent)
-      val realDuration = (group.totalMinutes * parentWeight).toInt()
-      val percent = if (null == parentTime) " " else (100f * realDuration / parentTime).renderPercent() + " "
-      if (parentWeight < 1f)
-        +"${percent}${realDuration.renderDuration()} (${group.totalMinutes.renderDuration()} * ${!parentWeight})"
-      else
-        +"${percent}${realDuration.renderDuration()}"
+    val colorHtml = "rgb(${group.color.map { it * 255 }.joinToString(",")})"
+    val row = div(classes = if (leaf) "leaf" else "") {
+      val activityName = span { +group.canon.name }
+      if ("" == activityName.parentElement!!.id) activityName.parentElement!!.id = group.id
+      val parentTime = parent?.totalMinutes
+      span(classes = "timeRender") {
+        val parentWeight = group.parentWeight(parent)
+        val realDuration = (group.totalMinutes * parentWeight).toInt()
+        val percent = if (null == parentTime) " " else (100f * realDuration / parentTime).renderPercent() + " "
+        if (parentWeight < 1f)
+          +"${percent}${realDuration.renderDuration()} (${group.totalMinutes.renderDuration()} * ${!parentWeight})"
+        else
+          +"${percent}${realDuration.renderDuration()}"
+      }
+      activityName.styles["color"] = colorHtml
     }
-    val color = group.color
-    header.styles["color"] = "rgb(${color.map{it*255}.joinToString(",")})"
 
     val children = if (leaf) null else ul {
       if (group.activities.isNotEmpty()) {
-        val li = li { span(classes = "timeRender-single") { +(group.activities.sumBy { it.duration }.renderDuration()) } }
+        val li = li {
+          div(classes = "leaf") {
+            span(classes = "timeRender-single") { +(group.activities.sumBy { it.duration }.renderDuration()) }
+          }
+        }
         li.addClass("leaf")
+        li.styles["color"] = colorHtml
       }
       group.children.sortedByDescending { it.totalMinutes }.forEach {
-        val li = li {
+        li {
           render(it, group, nextId(), depth + 1)
         }
-        if (it.children.isEmpty()) li.addClass("leaf")
       }
     }
     children?.id = id
@@ -88,18 +97,17 @@ class GroupTree(private val model : Log2, private val anchor : Element, private 
       children?.addClass("leaf")
     } else {
       children?.addClass("branch")
-      header.onclick = {
-        val li = (it.target as HTMLElement).parentElement!!
-        if (li.hasClass("open"))
-          close(li)
+      row.onclick = {
+        if (row.hasClass("open"))
+          close(row)
         else
-          open(li)
+          open(row)
       }
 
       if (depth < 1) {
-        header.parentElement!!.addClass("open")
+        row.addClass("open")
       } else {
-        header.parentElement!!.addClass("closed")
+        row.addClass("closed")
         children?.run { styles["display"] = "none" }
       }
     }
@@ -108,15 +116,17 @@ class GroupTree(private val model : Log2, private val anchor : Element, private 
   private fun inactive(el : Element) = el.removeClass("active")
   private fun active(el : Element) = el.addClass("active")
 
+  private inline fun Element.getElementToOpen() = nextElementSibling
+
   private fun close(el : Element) {
     el.removeClass("open")
     el.addClass("closed")
-    el.getElementsByTagName("ul").item(0)?.run { styles["display"] = "none" }
+    el.getElementToOpen()?.run { styles["display"] = "none" }
   }
 
   private fun open(el : Element) {
     el.removeClass("closed")
     el.addClass("open")
-    el.getElementsByTagName("ul").item(0)?.run { styles["display"] = null }
+    el.getElementToOpen()?.run { styles["display"] = null }
   }
 }
