@@ -1,5 +1,6 @@
 .idea/
 out/
 src/.*
+src/buildSrc/.*
 build/
 kotlin-js-store
