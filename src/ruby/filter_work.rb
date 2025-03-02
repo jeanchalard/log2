@@ -24,7 +24,7 @@ OUTFILE = if OUT == '-' then $stdout else File.new(OUT, File::CREAT | File::TRUN
 def filter(activity)
   case activity
   when /WF. .*/ then return activity
-  when /Zzz.*/ then return "Sleep"
+  when /Zzz.*/ then return "Zzz"
   else return "Not work"
   end
 end
