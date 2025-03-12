@@ -4,3 +4,4 @@ src/.*
 src/buildSrc/.*
 build/
 kotlin-js-store
+data/*

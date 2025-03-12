@@ -50,26 +50,33 @@ Unfortunately there still is some preprocessing involved,
 because someone decided that reading file:// files from
 a file:// html was a security risk, unless it's Javascript,
 in which case it's obviously fine 🤪
+(note I'm not saying there is no risk ; obviously sending
+someone an HTML file that could read anywhere might be bad.
+Just that... it being Javascript is a pitiful mitigation
+especially in this all-JSON era, and also this is useful
+enough that there ought to be *some* way like there is for
+just anything that's half this useful).
 I'm not going to manually write something like
 `const data = """` at the top and `""";` at the bottom of
 my data files and call them `.js`, since that would make
 them pretty annoying to write. So there is a preprocessing
 step to convert, written in Ruby. I do not think that today
-there is any way to solve this aside from making your data
-files valid javascript, having some preprocessing step, or
-demanding to run in a web server (hey if you think that's
-what I should do anyway genius, how do you propose I send a
-zip to someone to view on their phone ? I'm not going to
-pay for a public server to host this.)
+there is any way to solve this aside from making your
+manually written data files valid javascript, having some
+preprocessing step, or demanding to run in a web server
+(hey if you think that's what I should do anyway genius,
+how do you propose I send a zip to someone to view on
+their phone ? I'm not going to pay for a public server
+to host this.)
 Maybe someday the browsers can get their security story
 straight and this step can be removed. For the time being,
 though pretty aggravating this is, the Ruby script has to
 be run every time the data is changed, and the gradle build
 file for the Ruby step contains the list of files to
 process (in particular because at the end of the day,
-parsing thousands of line in Javascript takes a fair amount
-of time, so inputting 5 years of data into the page will
-still take many seconds to parse on my computer). This
+parsing thousands of lines in Javascript takes a fair
+amount of time, so inputting 5 years of data into the page
+will still take many seconds to parse on my computer). This
 step can be executed easily in an IDE, or on the command
 line from the src directory :
 ./gradlew make

@@ -1,0 +1,7 @@
+Put your data files here (or put here links to your
+data files). A suggested structure would be
+- data/ for data files
+- rules/ for rule files
+If applicable, data-20xx for older data files that
+are rarely useful
+
